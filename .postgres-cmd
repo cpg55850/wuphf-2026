@@ -1,0 +1,7 @@
+# psql -U postgres -p 5433
+
+# Password is postgres
+# \l  show databases
+# \c amazona  to connect to amazona database
+# \dt show the tables in the database
+# SELECT * FROM "User";

@@ -1,0 +1,4 @@
+Run after startup:
+
+docker compose exec app npx prisma migrate deploy
+docker compose exec app npx prisma db seed

@@ -5,35 +5,34 @@ async function main() {
 	const Avatar = await prisma.Avatar.createMany({
 		data: [
 			{
-                url: 'animal_svgs/dog_nau7in.svg',
-                name: 'Dog'
-            },
-            {
-                url: 'animal_svgs/cat_hizjv6.svg',
-                name: 'Cat'
-            },
-            {
-                url: 'animal_svgs/bird_wlfceb.svg',
-                name: 'Bird'
-            },
-            {
-                url: 'animal_svgs/owl_xnejqi.svg',
-                name: 'Owl'
-            },
-            {
-                url: 'animal_svgs/monkey_ywewbg.svg',
-                name: 'Monkey'
-            },
-            {
-                url: 'animal_svgs/bunny_tgvcdh.svg',
-                name: 'Bunny'
-            },
-            {
-                url: 'animal_svgs/panda_fb7grl.svg',
-                name: 'Panda'
-            }
-		]
-
+				url: 'animal_svgs/dog_nau7in.svg',
+				name: 'Dog',
+			},
+			{
+				url: 'animal_svgs/cat_hizjv6.svg',
+				name: 'Cat',
+			},
+			{
+				url: 'animal_svgs/bird_wlfceb.svg',
+				name: 'Bird',
+			},
+			{
+				url: 'animal_svgs/owl_xnejqi.svg',
+				name: 'Owl',
+			},
+			{
+				url: 'animal_svgs/monkey_ywewbg.svg',
+				name: 'Monkey',
+			},
+			{
+				url: 'animal_svgs/bunny_tgvcdh.svg',
+				name: 'Bunny',
+			},
+			{
+				url: 'animal_svgs/panda_fb7grl.svg',
+				name: 'Panda',
+			},
+		],
 	})
 
 	const users = await prisma.User.createMany({
@@ -65,19 +64,19 @@ async function main() {
 				userName: 'johndoe',
 				email: 'johndoe@gmail.com',
 				bio: 'hi I am john',
-				avatarId: 1
+				avatarId: 1,
 			},
 			{
 				userName: 'janedoe',
 				email: 'janedoe@gmail.com',
 				bio: 'hi I am jane',
-				avatarId: 4
+				avatarId: 4,
 			},
 			{
 				userName: 'stevesmith',
 				email: 'stevesmith@gmail.com',
 				bio: 'hi I am steve',
-				avatarId: 3
+				avatarId: 3,
 			},
 		],
 		skipDuplicates: true,
