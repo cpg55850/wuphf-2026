@@ -2,3 +2,6 @@ Run after startup:
 
 docker compose exec app npx prisma migrate deploy
 docker compose exec app npx prisma db seed
+
+docker-compose down -v                                  
+docker-compose up --build --force-recreate -d

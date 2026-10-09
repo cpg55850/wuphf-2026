@@ -1,147 +1,514 @@
-import { getSession } from 'next-auth/react'
+import { getSession } from "next-auth/react";
 
-import { prisma } from '../../../../lib/prisma'
+import { prisma } from "../../../../lib/prisma";
 
+/**
+ * @openapi
+ * /api/users/{uid}:
+ *   get:
+ *     summary: Retrieve user profile by username
+ *     description: Fetches detailed profile information for a specific user, including posts (Wuphfs), avatar, followers/following, and counts. If authenticated, attaches `isFollowed` status and strips detailed follower lists for non-owners.
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Username or URL-encoded user ID.
+ *     responses:
+ *       200:
+ *         description: User profile details successfully retrieved.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/WuphfUserDetail'
+ *       400:
+ *         description: Invalid or missing user ID parameter.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid or missing user ID parameter."
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No WuphfUser found with the username pam_beesly"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *
+ *   patch:
+ *     summary: Update user profile
+ *     description: Updates editable profile fields such as username, bio, UI theme, and avatar ID for a target user. Requires authentication.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Current username or URL-encoded user ID.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userName:
+ *                 type: string
+ *                 example: "pam_beesly_new"
+ *                 description: Updated unique username.
+ *               bio:
+ *                 type: string
+ *                 example: "Dunder Mifflin receptionist and artist."
+ *                 description: Short profile bio.
+ *               theme:
+ *                 type: string
+ *                 example: "dark"
+ *                 description: UI color theme preference.
+ *               avatarId:
+ *                 type: integer
+ *                 example: 3
+ *                 description: ID of the newly selected avatar.
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/WuphfUserUpdated'
+ *       400:
+ *         description: Unique constraint violation or invalid request body.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Username already taken."
+ *       401:
+ *         description: Unauthorized session.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized: You must be logged in."
+ *       403:
+ *         description: Forbidden action on another user's profile.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: You cannot modify another user's profile."
+ *       404:
+ *         description: User to update not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No WuphfUser found"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *
+ *   delete:
+ *     summary: Delete user account by username
+ *     description: Looks up the specified username, resolves their associated email, and permanently deletes their root User record. Requires authentication.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Username or URL-encoded user ID of the account to delete.
+ *     responses:
+ *       200:
+ *         description: User account deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: "usr_12345"
+ *                 email:
+ *                   type: string
+ *                   example: "pam@dundermifflin.com"
+ *       401:
+ *         description: Unauthorized session.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized: You must be logged in."
+ *       403:
+ *         description: Forbidden action on another user's account.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: You can only delete your own account."
+ *       404:
+ *         description: Target user not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No WuphfUser found"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *
+ * components:
+ *   schemas:
+ *     WuphfUserDetail:
+ *       type: object
+ *       properties:
+ *         userName:
+ *           type: string
+ *           example: "pam_beesly"
+ *         email:
+ *           type: string
+ *           example: "pam@dundermifflin.com"
+ *         bio:
+ *           type: string
+ *           nullable: true
+ *           example: "Dunder Mifflin receptionist and artist."
+ *         theme:
+ *           type: string
+ *           nullable: true
+ *           example: "light"
+ *         avatarId:
+ *           type: integer
+ *           nullable: true
+ *           example: 2
+ *         isFollowed:
+ *           type: boolean
+ *           description: Indicates whether the requesting session user follows this user (present when authenticated).
+ *           example: true
+ *         avatar:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 2
+ *             url:
+ *               type: string
+ *               example: "https://example.com/avatars/pam.png"
+ *         wuphfs:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Wuphf'
+ *         Followers:
+ *           type: array
+ *           description: List of followers (included for profile owner, stripped for non-owners).
+ *           items:
+ *             $ref: '#/components/schemas/FollowerRelation'
+ *         Following:
+ *           type: array
+ *           description: List of followed users (included for profile owner, stripped for non-owners).
+ *           items:
+ *             $ref: '#/components/schemas/FollowerRelation'
+ *         _count:
+ *           type: object
+ *           properties:
+ *             Followers:
+ *               type: integer
+ *               example: 42
+ *             Following:
+ *               type: integer
+ *               example: 18
+ *
+ *     WuphfUserUpdated:
+ *       type: object
+ *       properties:
+ *         userName:
+ *           type: string
+ *           example: "pam_beesly_new"
+ *         bio:
+ *           type: string
+ *           example: "Dunder Mifflin receptionist and artist."
+ *         theme:
+ *           type: string
+ *           example: "dark"
+ *         avatarId:
+ *           type: integer
+ *           example: 3
+ *         avatar:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             url:
+ *               type: string
+ *               example: "https://example.com/avatars/pam_new.png"
+ *
+ *     FollowerRelation:
+ *       type: object
+ *       properties:
+ *         followerId:
+ *           type: string
+ *           example: "jim_halpert"
+ *         userId:
+ *           type: string
+ *           example: "pam_beesly"
+ *         user:
+ *           type: object
+ *           properties:
+ *             avatar:
+ *               type: object
+ *               nullable: true
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   example: "https://example.com/avatars/jim.png"
+ */
 export default async function handler(req, res) {
-	const uid = decodeURIComponent(req.query.uid)
-	const session = await getSession({ req })
+  const session = await getSession({ req });
+  const rawUid = req.query.uid;
 
-	// /users/[uid]
-	if (req.method === 'GET') {
-		try {
-			const user = await prisma.WuphfUser.findUnique({
-				where: {
-					userName: uid,
-				},
-				include: {
-					wuphfs: true,
-					avatar: true,
-					Followers: {
-						select: {
-							followerId: true,
-							userId: true,
-							user: {
-								select: {
-									avatar: {
-										select: {
-											url: true,
-										},
-									},
-								},
-							},
-						},
-					},
-					Following: {
-						select: {
-							followerId: true,
-							userId: true,
-							user: {
-								select: {
-									avatar: {
-										select: {
-											url: true,
-										},
-									},
-								},
-							},
-						},
-					},
-					_count: {
-						select: {
-							Followers: true,
-							Following: true,
-						},
-					},
-				},
-			})
-			if (!user) {
-				return res
-					.status(404)
-					.json({ message: `No WuphfUser found with the username ${uid}` })
-			}
+  if (!rawUid || Array.isArray(rawUid)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid or missing user ID parameter." });
+  }
 
-			if (session) {
-				const sender = await prisma.WuphfUser.findUnique({
-					where: {
-						email: session.user.email,
-					},
-				})
-				user.isFollowed = user.Followers.some(
-					(f) => f.followerId === sender.userName
-				)
+  const uid = decodeURIComponent(rawUid);
 
-				if (sender.userName !== user.userName) {
-					delete user.Followers
-					delete user.Following
-				}
-			}
-			res.json(user)
-		} catch (error) {
-			// console.error(error)
-			res.status(500).json({ error })
-			throw error
-		}
-	} else if (req.method === 'PATCH') {
-		try {
-			const user = await prisma.WuphfUser.update({
-				where: {
-					userName: uid,
-				},
-				data: {
-					userName: req.body.userName || undefined,
-					bio: req.body.bio || undefined,
-					theme: req.body.theme || undefined,
-					avatarId: req.body.avatarId || undefined,
-				},
-				include: {
-					avatar: {
-						select: {
-							url: true,
-						},
-					},
-				},
-			})
+  // ---------------------------------------------------------------------------
+  // GET: Retrieve user profile
+  // ---------------------------------------------------------------------------
+  if (req.method === "GET") {
+    try {
+      const user = await prisma.wuphfUser.findUnique({
+        where: { userName: uid },
+        include: {
+          wuphfs: true,
+          avatar: true,
+          Followers: {
+            select: {
+              followerId: true,
+              userId: true,
+              user: {
+                select: {
+                  avatar: {
+                    select: { url: true },
+                  },
+                },
+              },
+            },
+          },
+          Following: {
+            select: {
+              followerId: true,
+              userId: true,
+              user: {
+                select: {
+                  avatar: {
+                    select: { url: true },
+                  },
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              Followers: true,
+              Following: true,
+            },
+          },
+        },
+      });
 
-			if (!user) {
-				return res.status(404).json({ message: 'No WuphfUser found' })
-			}
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: `No WuphfUser found with the username ${uid}` });
+      }
 
-			res.json(user)
-		} catch (error) {
-			// console.error(error)
-			res.status(500).json({ error })
-			throw error
-		}
+      if (session?.user?.email) {
+        const sender = await prisma.wuphfUser.findUnique({
+          where: { email: session.user.email },
+        });
 
-		// #authorization - who is allowed to do this?
-		// #validation - invalid input
-	} else if (req.method === 'DELETE') {
-		const wuphfUser = await prisma.WuphfUser.findUnique({
-			where: {
-				userName: uid,
-			},
-		})
+        if (sender) {
+          user.isFollowed = user.Followers.some(
+            (f) => f.followerId === sender.userName,
+          );
 
-		if (!wuphfUser) {
-			return res.status(404).json({ message: 'No WuphfUser found' })
-		}
+          if (sender.userName !== user.userName) {
+            delete user.Followers;
+            delete user.Following;
+          }
+        }
+      } else {
+        // Unauthenticated viewers shouldn't see detailed follower arrays
+        delete user.Followers;
+        delete user.Following;
+      }
 
-		const { email } = wuphfUser
+      return res.status(200).json(user);
+    } catch (error) {
+      console.error("Error in GET /api/users/[uid]:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
 
-		try {
-			const user = await prisma.User.delete({
-				where: {
-					email: email,
-				},
-			})
+  // ---------------------------------------------------------------------------
+  // Authorization check for PATCH and DELETE operations
+  // ---------------------------------------------------------------------------
+  if (!session?.user?.email) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: You must be logged in." });
+  }
 
-			res.json(user)
-		} catch (error) {
-			// console.error(error)
-			res.status(500).json({ error })
-			throw error
-		}
+  let sessionUser;
+  try {
+    sessionUser = await prisma.wuphfUser.findUnique({
+      where: { email: session.user.email },
+    });
+  } catch (error) {
+    console.error("Error fetching session user:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 
-		// #authorization - who is allowed to do this?
-	}
+  if (!sessionUser) {
+    return res.status(404).json({ message: "Session user profile not found." });
+  }
+
+  if (sessionUser.userName !== uid) {
+    return res.status(403).json({
+      message: "Forbidden: You can only update or delete your own account.",
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // PATCH: Update user profile
+  // ---------------------------------------------------------------------------
+  if (req.method === "PATCH") {
+    try {
+      const updatedUser = await prisma.wuphfUser.update({
+        where: { userName: uid },
+        data: {
+          userName: req.body.userName || undefined,
+          bio: req.body.bio || undefined,
+          theme: req.body.theme || undefined,
+          avatarId: req.body.avatarId || undefined,
+        },
+        include: {
+          avatar: {
+            select: { url: true },
+          },
+        },
+      });
+
+      return res.status(200).json(updatedUser);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return res.status(404).json({ message: "No WuphfUser found" });
+      }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Username or unique field already in use." });
+      }
+
+      console.error("Error in PATCH /api/users/[uid]:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // DELETE: Delete user account by username
+  // ---------------------------------------------------------------------------
+  if (req.method === "DELETE") {
+    try {
+      const deletedUser = await prisma.user.delete({
+        where: { email: sessionUser.email },
+      });
+
+      return res.status(200).json(deletedUser);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return res.status(404).json({ message: "Target user not found" });
+      }
+
+      console.error("Error in DELETE /api/users/[uid]:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  // Handle unsupported methods
+  res.setHeader("Allow", ["GET", "PATCH", "DELETE"]);
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
 }

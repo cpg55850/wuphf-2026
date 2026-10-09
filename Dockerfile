@@ -1,5 +1,5 @@
 # Use the official Node.js runtime as a parent image
-FROM node:16
+FROM node:20
 
 # Set the working directory in the container
 WORKDIR /app
@@ -9,7 +9,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install any needed packages specified in package.json
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Generate Prisma client
 RUN npx prisma generate

@@ -1,108 +1,410 @@
-import { getSession } from 'next-auth/react'
+import { getSession } from "next-auth/react";
 
-import { Prisma, prisma } from '../../../../lib/prisma'
+import { Prisma, prisma } from "../../../../lib/prisma";
 
+/**
+ * @openapi
+ * /api/wuphfs/{wid}:
+ *   get:
+ *     summary: Retrieve a specific Wuphf by ID
+ *     description: Fetches a single Wuphf post using its unique ID, including author avatar and like/comment counts.
+ *     tags:
+ *       - Wuphfs
+ *     parameters:
+ *       - in: path
+ *         name: wid
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique numeric ID of the Wuphf.
+ *     responses:
+ *       200:
+ *         description: Wuphf successfully retrieved.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/WuphfSingleDetail'
+ *       400:
+ *         description: Invalid Wuphf ID parameter.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Parameter 'wid' must be a valid integer."
+ *       404:
+ *         description: Wuphf not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Wuphf not found"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *
+ *   patch:
+ *     summary: Update an existing Wuphf
+ *     description: Updates the content or picture of a Wuphf created by the authenticated user. Requires authentication.
+ *     tags:
+ *       - Wuphfs
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: wid
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique numeric ID of the Wuphf to update.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - postBody
+ *             properties:
+ *               postBody:
+ *                 type: string
+ *                 example: "Updated Wuphf content!"
+ *                 description: The new post content (cannot be empty or whitespace only).
+ *               pictureUrl:
+ *                 type: string
+ *                 example: "https://example.com/updated_image.jpg"
+ *                 description: Optional updated picture URL.
+ *     responses:
+ *       200:
+ *         description: Wuphf update outcome (returns Prisma BatchPayload count object).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ *                   example: 1
+ *       400:
+ *         description: Invalid input (e.g. empty post body).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Post cannot contain only white space."
+ *       401:
+ *         description: Unauthorized session.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized: You must be logged in."
+ *       404:
+ *         description: The Wuphf to update was not found or not owned by user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "The Wuphf to update was not found"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *
+ *   delete:
+ *     summary: Delete a Wuphf
+ *     description: Permanently deletes a Wuphf post by its unique ID. Requires authentication and post ownership.
+ *     tags:
+ *       - Wuphfs
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: wid
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique numeric ID of the Wuphf to delete.
+ *     responses:
+ *       200:
+ *         description: Wuphf deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Wuphf'
+ *       401:
+ *         description: Unauthorized session.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized: You must be logged in."
+ *       403:
+ *         description: Forbidden action on another user's Wuphf.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden: You can only delete your own Wuphfs."
+ *       404:
+ *         description: The Wuphf to delete was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "The Wuphf to delete was not found"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *
+ * components:
+ *   schemas:
+ *     WuphfSingleDetail:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 101
+ *         userId:
+ *           type: string
+ *           example: "michael_scott"
+ *         pictureUrl:
+ *           type: string
+ *           nullable: true
+ *           example: "https://example.com/image.jpg"
+ *         postBody:
+ *           type: string
+ *           example: "WUPHF! Welcome to Dunder Mifflin!"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2026-10-08T04:48:20.000Z"
+ *         user:
+ *           type: object
+ *           properties:
+ *             avatar:
+ *               type: object
+ *               nullable: true
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 url:
+ *                   type: string
+ *                   example: "https://example.com/avatar.png"
+ *         _count:
+ *           type: object
+ *           properties:
+ *             Likes:
+ *               type: integer
+ *               example: 12
+ *             Comments:
+ *               type: integer
+ *               example: 4
+ */
 export default async function handler(req, res) {
-	const { wid } = req.query
+  // ---------------------------------------------------------------------------
+  // 1. Parameter Validation
+  // ---------------------------------------------------------------------------
+  const { wid } = req.query;
+  const wuphfId = Number(wid);
 
-	// /wuphfs/[wid]
-	if (req.method === 'GET') {
-		try {
-			const wuphf = await prisma.Wuphf.findUnique({
-				where: {
-					id: Number(wid),
-				},
-				include: {
-					_count: {
-						select: {
-							Likes: true,
-							Comments: true,
-						},
-					},
-					user: {
-						select: {
-							avatar: true,
-						},
-					},
-				},
-			})
+  if (!wid || isNaN(wuphfId)) {
+    return res.status(400).json({
+      message: "Parameter 'wid' must be a valid integer.",
+    });
+  }
 
-			if (!wuphf) {
-				return res.status(404).json({ message: 'Wuphf not found' })
-			}
+  // ---------------------------------------------------------------------------
+  // 2. GET: Retrieve a specific Wuphf by ID
+  // ---------------------------------------------------------------------------
+  if (req.method === "GET") {
+    try {
+      const wuphf = await prisma.wuphf.findUnique({
+        where: { id: wuphfId },
+        include: {
+          _count: {
+            select: {
+              Likes: true,
+              Comments: true,
+            },
+          },
+          user: {
+            select: {
+              avatar: true,
+            },
+          },
+        },
+      });
 
-			res.json(wuphf)
-		} catch (error) {
-			// console.error(error)
-			res.status(500).json({ error })
-			throw error
-		}
-	} else if (req.method === 'PATCH') {
-		if (req.body.postBody.trim().length === 0) {
-			res.status(400).json({ msg: 'Post cannot contain only white space.' })
-		} else {
-			const session = await getSession({ req })
-			const user = await prisma.WuphfUser.findUnique({
-				where: {
-					email: session.user.email,
-				},
-			})
+      if (!wuphf) {
+        return res.status(404).json({ message: "Wuphf not found" });
+      }
 
-			try {
-				const wuphf = await prisma.Wuphf.updateMany({
-					where: {
-						id: Number(wid),
-						userId: user.userName,
-					},
-					data: {
-						postBody: req.body.postBody,
-						pictureUrl: req.body.pictureUrl || undefined,
-					},
-				})
+      return res.status(200).json(wuphf);
+    } catch (error) {
+      console.error("Error in GET /api/wuphfs/[wid]:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
 
-				res.json(wuphf)
-			} catch (error) {
-				// P2025
-				if (error instanceof Prisma.PrismaClientKnownRequestError) {
-					// The .code property can be accessed in a type-safe manner
-					if (error.code === 'P2025') {
-						return res
-							.status(404)
-							.json({ message: 'The Wuphf to update was not found' })
-					}
-					// console.error(error)
-					res.status(500).json({ error })
-					throw error
-				}
-			}
+  // ---------------------------------------------------------------------------
+  // 3. Authorization Check for Mutating Operations (PATCH & DELETE)
+  // ---------------------------------------------------------------------------
+  const session = await getSession({ req });
 
-			// #authorization - who is allowed to do this?
-			// #validation - invalid input
-		}
-	} else if (req.method === 'DELETE') {
-		try {
-			const wuphf = await prisma.Wuphf.delete({
-				where: {
-					id: Number(wid),
-				},
-			})
+  if (!session?.user?.email) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: You must be logged in." });
+  }
 
-			res.json(wuphf)
-		} catch (error) {
-			// P2025
-			if (error instanceof Prisma.PrismaClientKnownRequestError) {
-				// The .code property can be accessed in a type-safe manner
-				if (error.code === 'P2025') {
-					return res
-						.status(404)
-						.json({ message: 'The Wuphf to delete was not found' })
-				}
-			}
-			// console.error(error)
-			res.status(500).json({ error })
-			throw error
-		}
+  let sessionUser;
+  try {
+    sessionUser = await prisma.wuphfUser.findUnique({
+      where: { email: session.user.email },
+    });
+  } catch (error) {
+    console.error("Error fetching session user:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 
-		// #authorization - who is allowed to do this?
-	}
+  if (!sessionUser) {
+    return res.status(404).json({ message: "Session user profile not found." });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. PATCH: Update an existing Wuphf
+  // ---------------------------------------------------------------------------
+  if (req.method === "PATCH") {
+    const { postBody, pictureUrl } = req.body || {};
+
+    if (!postBody || typeof postBody !== "string" || !postBody.trim()) {
+      return res.status(400).json({
+        message: "Post cannot contain only white space.",
+      });
+    }
+
+    try {
+      const result = await prisma.wuphf.updateMany({
+        where: {
+          id: wuphfId,
+          userId: sessionUser.userName,
+        },
+        data: {
+          postBody: postBody.trim(),
+          pictureUrl: pictureUrl || undefined,
+        },
+      });
+
+      if (result.count === 0) {
+        return res
+          .status(404)
+          .json({ message: "The Wuphf to update was not found" });
+      }
+
+      return res.status(200).json(result);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return res
+          .status(404)
+          .json({ message: "The Wuphf to update was not found" });
+      }
+
+      console.error("Error in PATCH /api/wuphfs/[wid]:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. DELETE: Delete a Wuphf
+  // ---------------------------------------------------------------------------
+  if (req.method === "DELETE") {
+    try {
+      // Look up target Wuphf to verify ownership
+      const targetWuphf = await prisma.wuphf.findUnique({
+        where: { id: wuphfId },
+      });
+
+      if (!targetWuphf) {
+        return res
+          .status(404)
+          .json({ message: "The Wuphf to delete was not found" });
+      }
+
+      if (targetWuphf.userId !== sessionUser.userName) {
+        return res.status(403).json({
+          message: "Forbidden: You can only delete your own Wuphfs.",
+        });
+      }
+
+      const deletedWuphf = await prisma.wuphf.delete({
+        where: { id: wuphfId },
+      });
+
+      return res.status(200).json(deletedWuphf);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return res
+          .status(404)
+          .json({ message: "The Wuphf to delete was not found" });
+      }
+
+      console.error("Error in DELETE /api/wuphfs/[wid]:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  // Handle unsupported HTTP methods
+  res.setHeader("Allow", ["GET", "PATCH", "DELETE"]);
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
 }

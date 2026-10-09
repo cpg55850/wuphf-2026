@@ -1,0 +1,290 @@
+openapi: 3.1.0
+info:
+  title: Prisma API
+  description: ""
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+        provider:
+          type: string
+        providerAccountId:
+          type: string
+        refresh_token:
+          type: string
+        access_token:
+          type: string
+        expires_at:
+          type: integer
+          format: int32
+        token_type:
+          type: string
+        scope:
+          type: string
+        id_token:
+          type: string
+        session_state:
+          type: string
+        oauth_token_secret:
+          type: string
+        oauth_token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - id
+        - userId
+        - type
+        - provider
+        - providerAccountId
+        - user
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+        sessionToken:
+          type: string
+        userId:
+          type: string
+        expires:
+          type: string
+          format: date-time
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - id
+        - sessionToken
+        - userId
+        - expires
+        - user
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        emailVerified:
+          type: string
+          format: date-time
+        image:
+          type: string
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Account"
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Session"
+        WuphfUser:
+          $ref: "#/components/schemas/WuphfUser"
+      required:
+        - id
+        - accounts
+        - sessions
+    VerificationToken:
+      type: object
+      properties:
+        identifier:
+          type: string
+        token:
+          type: string
+        expires:
+          type: string
+          format: date-time
+      required:
+        - identifier
+        - token
+        - expires
+    WuphfUser:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        email:
+          type: string
+        userName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        bio:
+          type: string
+        wuphfs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Wuphf"
+        Likes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Likes"
+        theme:
+          type: string
+        Followers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Follower"
+        Following:
+          type: array
+          items:
+            $ref: "#/components/schemas/Follower"
+        Comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comments"
+        avatar:
+          $ref: "#/components/schemas/Avatar"
+        avatarId:
+          type: integer
+          format: int32
+      required:
+        - user
+        - email
+        - userName
+        - createdAt
+        - bio
+        - wuphfs
+        - Likes
+        - Followers
+        - Following
+        - Comments
+        - avatar
+        - avatarId
+    Wuphf:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        user:
+          $ref: "#/components/schemas/WuphfUser"
+        userId:
+          type: string
+        pictureUrl:
+          type: string
+        postBody:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        Likes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Likes"
+        Comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comments"
+      required:
+        - id
+        - user
+        - userId
+        - postBody
+        - createdAt
+        - Likes
+        - Comments
+    Likes:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/WuphfUser"
+        userId:
+          type: string
+        wuphf:
+          $ref: "#/components/schemas/Wuphf"
+        wuphfId:
+          type: integer
+          format: int32
+      required:
+        - user
+        - userId
+        - wuphf
+        - wuphfId
+    Comments:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        wuphf:
+          $ref: "#/components/schemas/Wuphf"
+        postsId:
+          type: integer
+          format: int32
+        user:
+          $ref: "#/components/schemas/WuphfUser"
+        userId:
+          type: string
+        commentBody:
+          type: string
+      required:
+        - id
+        - createdAt
+        - wuphf
+        - postsId
+        - commentBody
+    Follower:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/WuphfUser"
+        userId:
+          type: string
+        follower:
+          $ref: "#/components/schemas/WuphfUser"
+        followerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - user
+        - userId
+        - follower
+        - followerId
+        - createdAt
+    Avatar:
+      type: object
+      properties:
+        avatarId:
+          type: integer
+          format: int32
+        name:
+          type: string
+        url:
+          type: string
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/WuphfUser"
+      required:
+        - avatarId
+        - name
+        - url
+        - users
+  responses: {}
+  parameters: {}
+  examples: {}
+  requestBodies: {}
+  headers: {}
+  securitySchemes: {}
+  links: {}
+  callbacks: {}
+tags: []
+servers: []

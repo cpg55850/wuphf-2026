@@ -5,6 +5,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator openapi {
+  provider = "prisma-openapi"
+  output   = "./openapi.yaml"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -97,6 +102,7 @@ model Likes {
 
 model Comments {
   id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
   wuphf       Wuphf      @relation(fields: [postsId], references: [id], onDelete: Cascade)
   postsId     Int
   user        WuphfUser? @relation(fields: [userId], references: [userName], onDelete: Cascade)

@@ -1,122 +1,140 @@
-import { getSession } from 'next-auth/react'
+import { getSession } from "next-auth/react";
 
-import { prisma } from '../../lib/prisma'
-
+import { prisma } from "../../lib/prisma";
+/**
+ * @openapi
+ * /api/timeline:
+ *   get:
+ *     summary: Fetch user timeline
+ *     parameters:
+ *       - in: query
+ *         name: followerId
+ *         schema:
+ *           type: string
+ *         description: Username of the follower (used if not authenticated)
+ *       - in: query
+ *         name: maxResults
+ *         schema:
+ *           type: integer
+ *         description: Number of results to return
+ *       - in: query
+ *         name: cursor
+ *         schema:
+ *           type: integer
+ *         description: Pagination cursor (Wuphf ID)
+ *     responses:
+ *       200:
+ *         description: Successfully fetched timeline
+ *       500:
+ *         description: Server error
+ */
 export default async function handler(req, res) {
-	const session = await getSession({ req })
+  if (req.method !== "GET") {
+    res.setHeader("Allow", ["GET"]);
+    return res
+      .status(405)
+      .json({ message: `Method ${req.method} Not Allowed` });
+  }
 
-	//   if (session) {
-	if (req.method === 'GET') {
-		// Grab all user ids that the user follows
-		// Add my id to that list
-		// Get all wuphfs where userid in the list
-		let wuphfUser = null
+  try {
+    const session = await getSession({ req });
+    let wuphfUser = null;
 
-		if (session) {
-			try {
-				wuphfUser = await prisma.WuphfUser.findUnique({
-					where: {
-						email: session.user.email,
-					},
-				})
+    if (session?.user?.email) {
+      wuphfUser = await prisma.wuphfUser.findUnique({
+        where: { email: session.user.email },
+      });
+    }
 
-				// if (!wuphfUser) {
-				//   return res.status(404).json({
-				//     message: `No WuphfUser found with the email ${session.user.email}`,
-				//   })
-				// }
-			} catch (error) {
-				res.status(500).json({ error })
-				throw error
-			}
-		}
+    // Determine target username from session or fallback query param
+    const rawFollowerId = req.query.followerId;
+    const fallbackFollowerId = Array.isArray(rawFollowerId)
+      ? rawFollowerId[0]
+      : rawFollowerId;
+    const targetUsername = wuphfUser?.userName || fallbackFollowerId;
 
-		try {
-			let users = await prisma.Follower.findMany({
-				where: {
-					followerId: wuphfUser ? wuphfUser.userName : req.query.followerId,
-				},
-				select: {
-					userId: true,
-				},
-			})
+    if (!targetUsername) {
+      return res.status(400).json({
+        message:
+          "Must be authenticated or provide a followerId query parameter.",
+      });
+    }
 
-			users = users.map((user) => user.userId)
+    // Fetch followed users and append the current user
+    const following = await prisma.follower.findMany({
+      where: { followerId: targetUsername },
+      select: { userId: true },
+    });
 
-			const usersWithMe = [
-				...users,
-				wuphfUser ? wuphfUser.userName : req.query.followerId,
-			]
+    const targetUsernames = [...following.map((f) => f.userId), targetUsername];
 
-			// console.log({
-			//   skip: !isNaN(req.query.cursor) ? 1 : 0,
-			//   ...(!isNaN(req.query.cursor) && {
-			//     cursor: { id: Number(req.query.cursor) },
-			//   }),
-			// })
-			// console.log(req.query.cursor)
-			// console.log(!isNaN(req.query.cursor))
+    // Parse pagination parameters safely
+    const rawMaxResults = req.query.maxResults;
+    const parsedMaxResults = rawMaxResults
+      ? parseInt(String(rawMaxResults), 10)
+      : 20;
+    const take = Number.isNaN(parsedMaxResults) ? 20 : parsedMaxResults;
 
-			const timeline = await (
-				await prisma.Wuphf.findMany({
-					take: Number(req.query.maxResults),
-					skip: !isNaN(req.query.cursor) ? 1 : 0,
-					...(!isNaN(req.query.cursor) && {
-						cursor: { id: Number(req.query.cursor) },
-					}),
-					where: {
-						userId: { in: usersWithMe },
-					},
-					orderBy: {
-						createdAt: 'desc',
-					},
-					include: {
-						Likes: true,
-						user: {
-							select: {
-								avatar: {
-									select: {
-										url: true,
-									},
-								},
-							},
-						},
-						_count: {
-							select: {
-								Likes: true,
-								Comments: true,
-							},
-						},
-					},
-				})
-			).map((wuphf) => {
-				const userLikePost = wuphf.Likes.some(
-					(like) => like.userId === wuphfUser.userName
-				)
-				delete wuphf.Likes
-				return {
-					...wuphf,
-					userLikePost,
-				}
-			})
+    const rawCursor = req.query.cursor;
+    const parsedCursor = rawCursor
+      ? parseInt(String(rawCursor), 10)
+      : undefined;
+    const cursor = Number.isNaN(parsedCursor) ? undefined : parsedCursor;
 
-			const lastWuphfInResults = timeline[timeline.length - 1]
-			const cursor = lastWuphfInResults
-				? lastWuphfInResults.id
-				: req.query.cursor
+    // Query timeline posts from Prisma
+    const rawWuphfs = await prisma.wuphf.findMany({
+      take,
+      ...(cursor !== undefined && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
+      where: {
+        userId: { in: targetUsernames },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        Likes: true,
+        user: {
+          select: {
+            avatar: {
+              select: { url: true },
+            },
+          },
+        },
+        _count: {
+          select: {
+            Likes: true,
+            Comments: true,
+          },
+        },
+      },
+    });
 
-			res.json({
-				timeline,
-				cursor,
-			})
-		} catch (error) {
-			res.status(500).json({ error })
-			throw error
-		}
-	}
+    // Format response and compute boolean like status for current user
+    const currentUsername = wuphfUser?.userName;
+    const timeline = rawWuphfs.map((wuphf) => {
+      const userLikePost = currentUsername
+        ? wuphf.Likes.some((like) => like.userId === currentUsername)
+        : false;
+
+      const { Likes, ...wuphfData } = wuphf;
+      return {
+        ...wuphfData,
+        userLikePost,
+      };
+    });
+
+    const nextCursor =
+      timeline.length > 0 ? timeline[timeline.length - 1].id : cursor;
+
+    return res.status(200).json({
+      timeline,
+      cursor: nextCursor,
+    });
+  } catch (error) {
+    console.error("Error fetching timeline:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
-//    else {
-//     res.status(401).json({ message: 'User not authenticated' })
-//   }
-//   res.end()
-// }

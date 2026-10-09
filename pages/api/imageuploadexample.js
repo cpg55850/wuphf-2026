@@ -1,23 +1,155 @@
-import cloudinary from 'cloudinary'
+import { v2 as cloudinary } from "cloudinary";
+import formidable from "formidable";
+import { getSession } from "next-auth/react";
 
-const formidable = require('formidable')
+// Configure Cloudinary using environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
-// Must disable body parser to read the incoming form data
+// Must disable body parser to read incoming multipart/form-data
 export const config = {
-    api: {
-        bodyParser: false,
-    },
-}
+  api: {
+    bodyParser: false,
+  },
+};
 
-export default function handler(req, res) {
-    const form = new formidable.IncomingForm()
-    form.parse(req, async function (err, fields, files) {
-        const [fileName] = Object.keys(files)
-        const file = files[fileName]
-        const { public_id, url } = await cloudinary.v2.uploader.upload(file.filepath, {
-            public_id: `uploads/${file.newFilename}`,
-            overwrite: true,
-        })
-        res.json({ public_id, url })
-    })
+/**
+ * @openapi
+ * /api/upload:
+ *   post:
+ *     summary: Upload an image file
+ *     description: Parses a multipart form request and uploads the image file to Cloudinary, returning the Cloudinary public ID and hosted URL. Requires authentication.
+ *     tags:
+ *       - Media
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The image file to upload.
+ *     responses:
+ *       200:
+ *         description: File successfully uploaded to Cloudinary.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 public_id:
+ *                   type: string
+ *                   example: "uploads/481a02f3c02d281e89"
+ *                   description: Cloudinary image public identifier.
+ *                 url:
+ *                   type: string
+ *                   example: "https://res.cloudinary.com/demo/image/upload/v1698273611/uploads/481a02f3c02d281e89.png"
+ *                   description: The web-accessible URL of the uploaded image.
+ *       400:
+ *         description: Missing or invalid file attachment.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No image file provided in request."
+ *       401:
+ *         description: Unauthorized session.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized: Active session required."
+ *       500:
+ *         description: Form parsing or Cloudinary upload error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to upload file to Cloudinary."
+ */
+export default async function handler(req, res) {
+  // ---------------------------------------------------------------------------
+  // 1. Method Guard & Headers
+  // ---------------------------------------------------------------------------
+  if (req.method !== "POST") {
+    res.setHeader("Allow", ["POST"]);
+    return res
+      .status(405)
+      .json({ message: `Method ${req.method} Not Allowed` });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2. Authentication Check
+  // ---------------------------------------------------------------------------
+  const session = await getSession({ req });
+
+  if (!session) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: Active session required." });
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Form Parsing & Cloudinary Upload
+  // ---------------------------------------------------------------------------
+  const form = formidable({
+    multiples: false,
+    keepExtensions: true,
+  });
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error("Error parsing multipart form:", err);
+      return res.status(400).json({ message: "Error parsing file data." });
+    }
+
+    // Safely retrieve the uploaded file (handles Formidable v2/v3 array structures)
+    const rawFile = files.file || files[Object.keys(files)[0]];
+    const file = Array.isArray(rawFile) ? rawFile[0] : rawFile;
+
+    const filePath = file?.filepath || file?.path;
+
+    if (!file || !filePath) {
+      return res
+        .status(400)
+        .json({ message: "No image file provided in request." });
+    }
+
+    try {
+      const publicId = `uploads/${file.newFilename || file.filename || Date.now()}`;
+
+      const uploadResult = await cloudinary.uploader.upload(filePath, {
+        public_id: publicId,
+        overwrite: true,
+      });
+
+      return res.status(200).json({
+        public_id: uploadResult.public_id,
+        url: uploadResult.secure_url || uploadResult.url,
+      });
+    } catch (uploadError) {
+      console.error("Cloudinary upload error:", uploadError);
+      return res
+        .status(500)
+        .json({ message: "Failed to upload file to Cloudinary." });
+    }
+  });
 }
