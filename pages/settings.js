@@ -1,32 +1,33 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { signOut } from "next-auth/react";
-import Head from "next/head";
-import propTypes from "prop-types";
-import { useForm } from "react-hook-form";
-import styled, { useTheme } from "styled-components";
+import React, { useEffect, useState } from 'react'
 
-import { darkTheme } from "../assets/themes/darkTheme";
-import { lavaTheme } from "../assets/themes/lavaTheme";
-import { lightTheme } from "../assets/themes/lightTheme";
-import FormInput from "../components/forms/FormInput";
-import SelectInput, { Wrapper } from "../components/forms/SelectInput";
-import TextArea from "../components/forms/TextArea";
-import Avatar from "../components/general/Avatar";
-import Button from "../components/general/Button";
-import withAuth from "../components/layout/withAuth";
-import GoogleLogo from "../components/other/GoogleLogo";
-import Sidebar from "../components/settings/Sidebar";
-import Paragraph from "../components/styledComponents/Paragraph";
-import { useAvatars } from "../hooks/useAvatar";
-import { useCustomTheme } from "../hooks/useCustomTheme";
-import { useWuphfUser } from "../hooks/WuphfUserContext";
+import axios from 'axios'
+import Head from 'next/head'
+import { signOut } from 'next-auth/react'
+import propTypes from 'prop-types'
+import { useForm } from 'react-hook-form'
+import styled from 'styled-components'
+
+import { darkTheme } from '../assets/themes/darkTheme'
+import { lavaTheme } from '../assets/themes/lavaTheme'
+import { lightTheme } from '../assets/themes/lightTheme'
+import FormInput from '../components/forms/FormInput'
+import SelectInput, { Wrapper } from '../components/forms/SelectInput'
+import TextArea from '../components/forms/TextArea'
+import Avatar from '../components/general/Avatar'
+import Button from '../components/general/Button'
+import withAuth from '../components/layout/withAuth'
+import GoogleLogo from '../components/other/GoogleLogo'
+import Sidebar from '../components/settings/Sidebar'
+import Paragraph from '../components/styledComponents/Paragraph'
+import { useAvatars } from '../hooks/useAvatar'
+import { useCustomTheme } from '../hooks/useCustomTheme'
+import { useWuphfUser } from '../hooks/WuphfUserContext'
 
 AccountSettings.propTypes = {
   avatar: propTypes.string,
   username: propTypes.string,
   biography: propTypes.string,
-};
+}
 
 function AccountSettings() {
   const {
@@ -37,47 +38,47 @@ function AccountSettings() {
     watch,
     setError,
   } = useForm({
-    mode: "onTouched",
-  });
+    mode: 'onTouched',
+  })
 
   const [editProfileSettingsEnabled, setEditProfileSettingsEnabled] =
-    useState(false);
+    useState(false)
   const [editVisualSettingsEnabled, setEditVisualSettingsEnabled] =
-    useState(false);
+    useState(false)
 
-  const { wuphfUser, setWuphfUser } = useWuphfUser();
-  const { avatars, lookupAvatarIdByUrl } = useAvatars();
-  const { changeTheme } = useCustomTheme();
+  const { wuphfUser, setWuphfUser } = useWuphfUser()
+  const { avatars, lookupAvatarIdByUrl } = useAvatars()
+  const { changeTheme } = useCustomTheme()
 
   const [selectedThemeValue, setSelectedThemeValue] = useState(
-    wuphfUser?.theme || "light",
-  );
+    wuphfUser?.theme || 'light',
+  )
 
   useEffect(() => {
     if (wuphfUser) {
-      setValue("avatar", wuphfUser.avatar?.url || "");
-      setValue("username", wuphfUser.userName?.trim() || "");
-      setValue("biography_textarea", wuphfUser.bio || "");
-      setSelectedThemeValue(wuphfUser.theme || "light");
+      setValue('avatar', wuphfUser.avatar?.url || '')
+      setValue('username', wuphfUser.userName?.trim() || '')
+      setValue('biography_textarea', wuphfUser.bio || '')
+      setSelectedThemeValue(wuphfUser.theme || 'light')
     }
-  }, [wuphfUser, setValue]);
+  }, [wuphfUser, setValue])
 
   function handleThemeChange(e) {
-    const newTheme = e.target.value;
-    setSelectedThemeValue(newTheme);
+    const newTheme = e.target.value
+    setSelectedThemeValue(newTheme)
 
-    if (newTheme === "light") changeTheme(lightTheme);
-    if (newTheme === "lava") changeTheme(lavaTheme);
-    if (newTheme === "dark") changeTheme(darkTheme);
+    if (newTheme === 'light') changeTheme(lightTheme)
+    if (newTheme === 'lava') changeTheme(lavaTheme)
+    if (newTheme === 'dark') changeTheme(darkTheme)
   }
 
   async function handleEditProfileSettingsButtonClick(e) {
-    e.preventDefault();
+    e.preventDefault()
 
     if (editProfileSettingsEnabled) {
-      const updatedUsername = getValues("username");
-      const updatedBio = getValues("biography_textarea");
-      const updatedAvatarUrl = getValues("avatar");
+      const updatedUsername = getValues('username')
+      const updatedBio = getValues('biography_textarea')
+      const updatedAvatarUrl = getValues('avatar')
 
       // Optimistic Update
       setWuphfUser((prev) => ({
@@ -85,7 +86,7 @@ function AccountSettings() {
         userName: updatedUsername,
         bio: updatedBio,
         avatar: { ...prev?.avatar, url: updatedAvatarUrl },
-      }));
+      }))
 
       try {
         const res = await axios.patch(
@@ -95,52 +96,52 @@ function AccountSettings() {
             bio: updatedBio,
             avatarId: lookupAvatarIdByUrl(updatedAvatarUrl),
           },
-        );
-        setWuphfUser(res.data);
+        )
+        setWuphfUser(res.data)
       } catch (err) {
-        console.error("Failed to update profile:", err);
+        console.error('Failed to update profile:', err)
         if (err.response?.status === 400 || err.response?.status === 409) {
-          setError("username", {
-            type: "manual",
-            message: err.response?.data?.message || "Failed to update profile.",
-          });
+          setError('username', {
+            type: 'manual',
+            message: err.response?.data?.message || 'Failed to update profile.',
+          })
         }
       }
     }
 
-    setEditProfileSettingsEnabled(!editProfileSettingsEnabled);
+    setEditProfileSettingsEnabled(!editProfileSettingsEnabled)
   }
 
   async function handleEditVisualSettingsButtonClick(e) {
-    e.preventDefault();
+    e.preventDefault()
 
     if (editVisualSettingsEnabled) {
       try {
         const res = await axios.patch(
           `/api/users/${encodeURIComponent(wuphfUser.userName)}`,
           { theme: selectedThemeValue },
-        );
-        setWuphfUser(res.data);
+        )
+        setWuphfUser(res.data)
       } catch (err) {
-        console.error("Failed to update visual settings:", err);
+        console.error('Failed to update visual settings:', err)
       }
     }
 
-    setEditVisualSettingsEnabled(!editVisualSettingsEnabled);
+    setEditVisualSettingsEnabled(!editVisualSettingsEnabled)
   }
 
   async function handleDeleteButtonClick(e) {
-    e.preventDefault();
-    if (!window.confirm("Are you sure you want to delete your account?"))
-      return;
+    e.preventDefault()
+    if (!window.confirm('Are you sure you want to delete your account?'))
+      return
 
     try {
       await axios.delete(
         `/api/users/${encodeURIComponent(wuphfUser.userName)}`,
-      );
-      signOut();
+      )
+      signOut()
     } catch (err) {
-      console.error("Failed to delete account:", err);
+      console.error('Failed to delete account:', err)
     }
   }
 
@@ -159,7 +160,7 @@ function AccountSettings() {
                 variant="secondary"
                 onClick={handleEditProfileSettingsButtonClick}
               >
-                {editProfileSettingsEnabled ? "Save" : "Edit"}
+                {editProfileSettingsEnabled ? 'Save' : 'Edit'}
               </Button>
             </EditBtnWrapper>
           </HeaderButtonWrapper>
@@ -181,7 +182,7 @@ function AccountSettings() {
             <Avatar
               size="large"
               username={wuphfUser?.userName}
-              profileImageUrl={watch("avatar") || "animal_svgs/dog_nau7in.svg"}
+              profileImageUrl={watch('avatar') || 'animal_svgs/dog_nau7in.svg'}
             />
           </TextBtnSpace>
 
@@ -227,7 +228,7 @@ function AccountSettings() {
                 variant="secondary"
                 onClick={handleEditVisualSettingsButtonClick}
               >
-                {editVisualSettingsEnabled ? "Save" : "Edit"}
+                {editVisualSettingsEnabled ? 'Save' : 'Edit'}
               </Button>
             </EditBtnWrapper>
           </HeaderButtonWrapper>
@@ -260,20 +261,20 @@ function AccountSettings() {
         </div>
       </MainContent>
     </AccSetLayout>
-  );
+  )
 }
 
-export default withAuth(AccountSettings);
+export default withAuth(AccountSettings)
 
 const MainContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-`;
+`
 const TextBtnSpace = styled.div`
   display: flex;
   gap: 30px;
-`;
+`
 const AccSetLayout = styled.div`
   display: flex;
   flex-direction: row;
@@ -281,33 +282,33 @@ const AccSetLayout = styled.div`
   max-width: 686px;
   margin: 0 auto;
   padding: 0 1rem;
-`;
+`
 const Subheading = styled.div`
   margin-top: 2rem;
   margin-bottom: 1rem;
   font-weight: bold;
   font-size: 1rem;
-`;
+`
 const HeaderText = styled.div`
   font-size: 2rem;
   font-weight: bold;
   border: none;
   text-align: left;
   width: 100%;
-`;
+`
 const HeaderButtonWrapper = styled.div`
   margin-left: 0em;
   display: flex;
   flex-direction: row;
   padding: 20px 0 0 0;
-`;
+`
 const EditBtnWrapper = styled.div`
   font-size: 1.3rem;
-`;
+`
 const DABtnWrapper = styled.div`
   font-size: 1.3rem;
   margin-top: 1rem;
-`;
+`
 const Option = styled.option`
   color: black;
-`;
+`

@@ -1,7 +1,8 @@
-import { object, string } from "yup";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../../lib/authOptions";
-import { prisma } from "../../../lib/prisma";
+import { getServerSession } from 'next-auth/next'
+import { object, string } from 'yup'
+
+import { authOptions } from '../../../lib/authOptions'
+import { Prisma, prisma } from '../../../lib/prisma'
 
 /**
  * @openapi
@@ -190,22 +191,22 @@ import { prisma } from "../../../lib/prisma";
 // Yup Validation Schema
 const wuphfSchema = object({
   userName: string().nullable(),
-  pictureUrl: string().nullable().url("Picture URL must be a valid URL"),
+  pictureUrl: string().nullable().url('Picture URL must be a valid URL'),
   postBody: string()
-    .required("Post body is required.")
-    .trim("Post body cannot be empty or white space.")
-    .min(1, "Post body cannot be empty."),
-});
+    .required('Post body is required.')
+    .trim('Post body cannot be empty or white space.')
+    .min(1, 'Post body cannot be empty.'),
+})
 
 export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 1. GET: Retrieve all Wuphfs
   // ---------------------------------------------------------------------------
-  if (req.method === "GET") {
+  if (req.method === 'GET') {
     try {
       const wuphfs = await prisma.wuphf.findMany({
         orderBy: {
-          createdAt: "desc",
+          createdAt: 'desc',
         },
         include: {
           _count: {
@@ -215,68 +216,68 @@ export default async function handler(req, res) {
             },
           },
         },
-      });
+      })
 
-      return res.status(200).json(wuphfs);
+      return res.status(200).json(wuphfs)
     } catch (error) {
-      console.error("Error in GET /api/wuphfs:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in GET /api/wuphfs:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // ---------------------------------------------------------------------------
   // 2. POST: Create a new Wuphf
   // ---------------------------------------------------------------------------
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
     // Validate request body using Yup schema
     try {
-      await wuphfSchema.validate(req.body, { abortEarly: false });
+      await wuphfSchema.validate(req.body, { abortEarly: false })
     } catch (error) {
       return res.status(400).json({
         name: error.name,
         errors: error.errors,
-      });
+      })
     }
 
     // Resolve Author Identity (Session with body fallback)
-    const session = await getServerSession(req, res, authOptions);
-    let authorUsername = null;
+    const session = await getServerSession(req, res, authOptions)
+    let authorUsername = null
 
     try {
       if (session?.user?.email) {
         const sessionUser = await prisma.wuphfUser.findUnique({
           where: { email: session.user.email },
           select: { userName: true },
-        });
+        })
 
-        authorUsername = sessionUser?.userName || null;
-      } else if (req.body.userName && typeof req.body.userName === "string") {
-        authorUsername = req.body.userName.trim();
+        authorUsername = sessionUser?.userName || null
+      } else if (req.body.userName && typeof req.body.userName === 'string') {
+        authorUsername = req.body.userName.trim()
       }
 
       if (!authorUsername) {
         return res.status(401).json({
           message:
-            "Unauthorized: User identification required to create a Wuphf.",
-        });
+            'Unauthorized: User identification required to create a Wuphf.',
+        })
       }
 
       // Verify Author Exists in Database
       const targetUser = await prisma.wuphfUser.findUnique({
         where: { userName: authorUsername },
         select: { userName: true },
-      });
+      })
 
       if (!targetUser) {
         return res.status(404).json({
           message: `No WuphfUser found for username '${authorUsername}'`,
-        });
+        })
       }
 
       // Create Wuphf
       const pictureUrlValue = req.body.pictureUrl
         ? req.body.pictureUrl.trim()
-        : null;
+        : null
 
       const wuphf = await prisma.wuphf.create({
         data: {
@@ -307,25 +308,25 @@ export default async function handler(req, res) {
             },
           },
         },
-      });
+      })
 
-      return res.status(201).json(wuphf);
+      return res.status(201).json(wuphf)
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2003"
+        error.code === 'P2003'
       ) {
         return res.status(404).json({
-          message: "The author user record does not exist.",
-        });
+          message: 'The author user record does not exist.',
+        })
       }
 
-      console.error("Error in POST /api/wuphfs:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in POST /api/wuphfs:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // Handle unsupported HTTP methods
-  res.setHeader("Allow", ["GET", "POST"]);
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  res.setHeader('Allow', ['GET', 'POST'])
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
 }

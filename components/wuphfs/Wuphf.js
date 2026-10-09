@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react'
 
 import {
   faBan,
@@ -8,67 +8,67 @@ import {
   faThumbsUp,
   faTrashCan,
   faComment,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import axios from "axios";
-import moment from "moment";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
-import TextareaAutosize from "react-textarea-autosize";
-import styled from "styled-components";
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import axios from 'axios'
+import moment from 'moment'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import TextareaAutosize from 'react-textarea-autosize'
+import styled from 'styled-components'
 
-import { useWuphfUser } from "../../hooks/WuphfUserContext";
-import Avatar from "../general/Avatar";
-import Button from "../general/Button";
+import { useWuphfUser } from '../../hooks/WuphfUserContext'
+import Avatar from '../general/Avatar'
+import Button from '../general/Button'
 
 function Wuphf(props) {
-  const { lastWuphfElementRef, deleteWuphf } = props;
+  const { lastWuphfElementRef, deleteWuphf } = props
 
-  const [editMenuShown, setEditMenuShown] = useState(false);
-  const [editable, setEditable] = useState(false);
-  const [postContent, setPostContent] = useState(props.postBody);
+  const [editMenuShown, setEditMenuShown] = useState(false)
+  const [editable, setEditable] = useState(false)
+  const [postContent, setPostContent] = useState(props.postBody)
 
-  const [userLikePost, setUserLikePost] = useState(props.userLikePost);
-  const [likeCount, setLikeCount] = useState(props._count?.Likes);
-  const { wuphfUser } = useWuphfUser();
+  const [userLikePost, setUserLikePost] = useState(props.userLikePost)
+  const [likeCount, setLikeCount] = useState(props._count?.Likes)
+  const { wuphfUser } = useWuphfUser()
 
-  const { data: session } = useSession();
+  const { data: session } = useSession()
   function toggleEditMenuShown(e) {
-    e.preventDefault();
-    setEditMenuShown(!editMenuShown);
+    e.preventDefault()
+    setEditMenuShown(!editMenuShown)
   }
 
   function toggleEditable(e) {
-    e.preventDefault();
-    setEditMenuShown(false);
-    setEditable(!editable);
+    e.preventDefault()
+    setEditMenuShown(false)
+    setEditable(!editable)
   }
 
   function handleEdit(e) {
     if (editable) {
-      setPostContent(e.target.value);
+      setPostContent(e.target.value)
     }
   }
 
   function handleDelete(e) {
-    e.preventDefault();
-    setEditMenuShown(false);
+    e.preventDefault()
+    setEditMenuShown(false)
     axios.delete(`/api/wuphfs/${props.id}`).then(() => {
-      props.deleteWuphf(props.id);
-    });
+      props.deleteWuphf(props.id)
+    })
   }
 
   function handleSave(e) {
-    e.preventDefault();
-    setEditable(false);
+    e.preventDefault()
+    setEditable(false)
     axios.patch(`/api/wuphfs/${props.id}`, {
       postBody: postContent,
-    });
+    })
   }
 
   function handleChild(e) {
     // prevent a click on textbox from triggering link on parent
-    e.stopPropagation();
+    e.stopPropagation()
   }
   async function handleLikeToggle() {
     if (!userLikePost) {
@@ -78,9 +78,9 @@ function Wuphf(props) {
           wuphfId: props.id,
         })
         .then(() => {
-          setUserLikePost(true);
-          setLikeCount(likeCount + 1);
-        });
+          setUserLikePost(true)
+          setLikeCount(likeCount + 1)
+        })
     } else {
       await axios
         .delete(`/api/wuphfs/${props.id}/likes`, {
@@ -88,9 +88,9 @@ function Wuphf(props) {
           wuphfId: props.id,
         })
         .then(() => {
-          setUserLikePost(false);
-          setLikeCount(likeCount - 1);
-        });
+          setUserLikePost(false)
+          setLikeCount(likeCount - 1)
+        })
     }
   }
 
@@ -113,15 +113,15 @@ function Wuphf(props) {
     // 		yy: '%dY',
     // 	},
     // })
-    const currentTime = moment();
-    const wuphfTime = moment(createdAt);
+    const currentTime = moment()
+    const wuphfTime = moment(createdAt)
 
-    const timeDiff = currentTime.diff(wuphfTime, "h");
+    const timeDiff = currentTime.diff(wuphfTime, 'h')
 
     if (timeDiff < 24) {
-      return moment(createdAt).fromNow();
+      return moment(createdAt).fromNow()
     } else {
-      return moment(createdAt).format("MMM Do");
+      return moment(createdAt).format('MMM Do')
     }
   }
 
@@ -198,7 +198,7 @@ function Wuphf(props) {
               <FontAwesomeIcon
                 icon={faThumbsUp}
                 onClick={handleLikeToggle}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: 'pointer' }}
               />
               <LikeCount>{likeCount}</LikeCount>
             </LikeWrapper>
@@ -206,7 +206,7 @@ function Wuphf(props) {
               <CommentWrapper hasComments={props._count.Comments > 0}>
                 <FontAwesomeIcon
                   icon={faComment}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: 'pointer' }}
                 />
                 <CommentCount>{props._count.Comments}</CommentCount>
               </CommentWrapper>
@@ -215,21 +215,21 @@ function Wuphf(props) {
         </PostWrapper>
       </Container>
     </PostBorder>
-  );
+  )
 }
 
 const LikeCount = styled.span`
   cursor: pointer;
-`;
+`
 
 const CommentCount = styled.span`
   cursor: pointer;
-`;
+`
 
 const Reactions = styled.div`
   display: flex;
   gap: 1rem;
-`;
+`
 
 const CommentWrapper = styled.div`
   display: flex;
@@ -237,7 +237,7 @@ const CommentWrapper = styled.div`
   align-items: center;
   gap: 0.4rem;
   color: ${({ hasComments, theme }) =>
-    hasComments ? theme.colors.comment : "grey"};
+    hasComments ? theme.colors.comment : 'grey'};
   svg {
     padding: 0.4rem;
     border-radius: 50%;
@@ -250,14 +250,14 @@ const CommentWrapper = styled.div`
       background-color: ${({ theme }) => theme.colors.commentActive};
     }
   }
-`;
+`
 const LikeWrapper = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 0.4rem;
   color: ${({ userLikePost, theme }) =>
-    userLikePost ? theme.colors.like : "grey"};
+    userLikePost ? theme.colors.like : 'grey'};
   svg {
     padding: 0.4rem;
     border-radius: 50%;
@@ -270,47 +270,47 @@ const LikeWrapper = styled.div`
       background-color: ${({ theme }) => theme.colors.likeActive};
     }
   }
-`;
+`
 
 const Container = styled.div`
   display: grid;
   grid-template-columns: 5rem auto;
   width: 100%;
-`;
+`
 
 const TweetHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-`;
+`
 
 const EditCorner = styled.div`
   display: flex;
   flex-direction: column;
   align-items: end;
   cursor: pointer;
-`;
+`
 
 const StyledEditButton = styled(FontAwesomeIcon)`
   padding: 5px;
   border-radius: 50%;
   color: ${(props) => props.theme.colors.lightGrey};
   background-color: ${(props) =>
-    props.$shown ? props.theme.colors.primary : "auto"};
+    props.$shown ? props.theme.colors.primary : 'auto'};
   &:hover {
     background-color: ${(props) => props.theme.colors.primary};
     color: ${(props) => props.theme.colors.text};
   }
-`;
+`
 
 const EditMenu = styled.ul`
   background-color: ${(props) => props.theme.colors.highlight};
   position: absolute;
   margin-top: 25px;
   border-radius: 10px;
-  height: ${(props) => (props.$shown ? "auto" : "0px")};
-  display: ${(props) => (props.$shown ? "block" : "none")};
-`;
+  height: ${(props) => (props.$shown ? 'auto' : '0px')};
+  display: ${(props) => (props.$shown ? 'block' : 'none')};
+`
 
 const EditMenuItem = styled.li`
   padding: 5px 10px;
@@ -330,7 +330,7 @@ const EditMenuItem = styled.li`
     color: ${(props) => props.theme.colors.text};
     background-color: ${(props) => props.theme.colors.primary};
   }
-`;
+`
 
 const AvatarWrapper = styled.div`
   position: relative;
@@ -340,25 +340,25 @@ const AvatarWrapper = styled.div`
     height: 50px;
   }
   margin: 0 auto;
-`;
+`
 
 const PostWrapper = styled.div`
   padding: 1rem;
   padding-left: 0;
-`;
+`
 
 const UsernameAndTime = styled.div`
   display: flex;
   gap: 0.25rem;
-`;
+`
 
 const Dot = styled.span`
   color: ${({ theme }) => theme.colors.subtext};
-`;
+`
 
 const Time = styled.span`
   color: ${({ theme }) => theme.colors.subtext};
-`;
+`
 
 const Username = styled.h3`
   position: relative;
@@ -368,7 +368,7 @@ const Username = styled.h3`
     text-decoration: underline;
     cursor: pointer;
   }
-`;
+`
 
 const Post = styled(TextareaAutosize)`
   font-family: inherit;
@@ -378,15 +378,15 @@ const Post = styled(TextareaAutosize)`
   line-height: 1.25em;
   background: rgba(0, 0, 0, 0);
   border: ${(props) =>
-    props.$editable ? `1px solid ${props.theme.colors.darkestBlue}` : "none"};
+    props.$editable ? `1px solid ${props.theme.colors.darkestBlue}` : 'none'};
   border-radius: 10px;
-  cursor: ${(props) => (props.$editable ? "text" : "default")};
+  cursor: ${(props) => (props.$editable ? 'text' : 'default')};
   resize: none;
   width: 100%;
   height: 100%;
   box-shadow: none;
   outline: none;
-`;
+`
 
 const PostBorder = styled.div`
   &:first-child {
@@ -408,20 +408,20 @@ const PostBorder = styled.div`
   }
 
   /* cursor: pointer; */
-`;
+`
 
 const SaveButton = styled(Button)`
-  display: ${(props) => (props.$shown ? "flex" : "none")};
+  display: ${(props) => (props.$shown ? 'flex' : 'none')};
   justify-content: flex-end;
   gap: 10px;
   width: max-content;
-`;
+`
 
 const SecondRow = styled.div`
   display: flex;
   align-items: flex-end;
   flex-direction: column;
   gap: 5px;
-`;
+`
 
-export default Wuphf;
+export default Wuphf

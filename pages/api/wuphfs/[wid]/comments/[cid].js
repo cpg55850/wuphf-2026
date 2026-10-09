@@ -1,4 +1,4 @@
-import { prisma } from "../../../../../lib/prisma";
+import { Prisma, prisma } from '../../../../../lib/prisma'
 
 /**
  * @openapi
@@ -222,20 +222,20 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 1. Parameter Parsing & Validation
   // ---------------------------------------------------------------------------
-  const { wid, cid } = req.query;
-  const postsId = Number(wid);
-  const commentId = Number(cid);
+  const { wid, cid } = req.query
+  const postsId = Number(wid)
+  const commentId = Number(cid)
 
   if (!wid || !cid || isNaN(postsId) || isNaN(commentId)) {
     return res.status(400).json({
-      message: "Parameters 'wid' and 'cid' must be valid integers.",
-    });
+      message: 'Parameters \'wid\' and \'cid\' must be valid integers.',
+    })
   }
 
   // ---------------------------------------------------------------------------
   // 2. GET: Retrieve a specific comment by ID
   // ---------------------------------------------------------------------------
-  if (req.method === "GET") {
+  if (req.method === 'GET') {
     try {
       const comment = await prisma.comments.findFirst({
         where: {
@@ -253,82 +253,82 @@ export default async function handler(req, res) {
             },
           },
         },
-      });
+      })
 
       if (!comment) {
-        return res.status(404).json({ message: "Comment not found" });
+        return res.status(404).json({ message: 'Comment not found' })
       }
 
-      return res.status(200).json(comment);
+      return res.status(200).json(comment)
     } catch (error) {
-      console.error("Error in GET /api/wuphfs/[wid]/comments/[cid]:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in GET /api/wuphfs/[wid]/comments/[cid]:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // ---------------------------------------------------------------------------
   // 3. Authentication & Ownership Verification for Mutating Operations
   // ---------------------------------------------------------------------------
-  const session = await getSession({ req });
+  const session = await getSession({ req })
 
   if (!session?.user?.email) {
     return res
       .status(401)
-      .json({ message: "Unauthorized: You must be logged in." });
+      .json({ message: 'Unauthorized: You must be logged in.' })
   }
 
-  let sessionUser;
+  let sessionUser
   try {
     sessionUser = await prisma.wuphfUser.findUnique({
       where: { email: session.user.email },
-    });
+    })
   } catch (error) {
-    console.error("Error fetching session user:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error('Error fetching session user:', error)
+    return res.status(500).json({ message: 'Internal server error' })
   }
 
   if (!sessionUser) {
-    return res.status(404).json({ message: "Session user profile not found." });
+    return res.status(404).json({ message: 'Session user profile not found.' })
   }
 
   // Ensure target comment exists and verify ownership/post association
-  let existingComment;
+  let existingComment
   try {
     existingComment = await prisma.comments.findFirst({
       where: {
         id: commentId,
         postsId: postsId,
       },
-    });
+    })
   } catch (error) {
-    console.error("Error fetching target comment:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error('Error fetching target comment:', error)
+    return res.status(500).json({ message: 'Internal server error' })
   }
 
   if (!existingComment) {
-    return res.status(404).json({ message: "Comment not found" });
+    return res.status(404).json({ message: 'Comment not found' })
   }
 
   if (existingComment.userId !== sessionUser.userName) {
     return res.status(403).json({
-      message: "Forbidden: You can only edit or delete your own comments.",
-    });
+      message: 'Forbidden: You can only edit or delete your own comments.',
+    })
   }
 
   // ---------------------------------------------------------------------------
   // 4. PATCH: Update comment body
   // ---------------------------------------------------------------------------
-  if (req.method === "PATCH") {
-    const { commentBody } = req.body || {};
+  if (req.method === 'PATCH') {
+    const { commentBody } = req.body || {}
 
     if (
       !commentBody ||
-      typeof commentBody !== "string" ||
+      typeof commentBody !== 'string' ||
       !commentBody.trim()
     ) {
       return res.status(400).json({
-        message: "Field 'commentBody' must be a non-empty string.",
-      });
+        message: 'Field \'commentBody\' must be a non-empty string.',
+      })
     }
 
     try {
@@ -337,46 +337,46 @@ export default async function handler(req, res) {
         data: {
           commentBody: commentBody.trim(),
         },
-      });
+      })
 
-      return res.status(200).json(updatedComment);
+      return res.status(200).json(updatedComment)
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
+        error.code === 'P2025'
       ) {
-        return res.status(404).json({ message: "Comment not found" });
+        return res.status(404).json({ message: 'Comment not found' })
       }
 
-      console.error("Error in PATCH /api/wuphfs/[wid]/comments/[cid]:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in PATCH /api/wuphfs/[wid]/comments/[cid]:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // ---------------------------------------------------------------------------
   // 5. DELETE: Delete a comment
   // ---------------------------------------------------------------------------
-  if (req.method === "DELETE") {
+  if (req.method === 'DELETE') {
     try {
       const deletedComment = await prisma.comments.delete({
         where: { id: commentId },
-      });
+      })
 
-      return res.status(200).json(deletedComment);
+      return res.status(200).json(deletedComment)
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
+        error.code === 'P2025'
       ) {
-        return res.status(404).json({ message: "Comment not found" });
+        return res.status(404).json({ message: 'Comment not found' })
       }
 
-      console.error("Error in DELETE /api/wuphfs/[wid]/comments/[cid]:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in DELETE /api/wuphfs/[wid]/comments/[cid]:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // Handle unsupported methods
-  res.setHeader("Allow", ["GET", "PATCH", "DELETE"]);
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
 }

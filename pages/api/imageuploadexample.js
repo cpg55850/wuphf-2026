@@ -1,7 +1,8 @@
-import { v2 as cloudinary } from "cloudinary";
-import formidable from "formidable";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../lib/authOptions";
+import { v2 as cloudinary } from 'cloudinary'
+import formidable from 'formidable'
+import { getServerSession } from 'next-auth/next'
+
+import { authOptions } from '../../lib/authOptions'
 
 // Configure Cloudinary using environment variables
 cloudinary.config({
@@ -9,14 +10,14 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
-});
+})
 
 // Must disable body parser to read incoming multipart/form-data
 export const config = {
   api: {
     bodyParser: false,
   },
-};
+}
 
 /**
  * @openapi
@@ -90,22 +91,22 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 1. Method Guard & Headers
   // ---------------------------------------------------------------------------
-  if (req.method !== "POST") {
-    res.setHeader("Allow", ["POST"]);
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST'])
     return res
       .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` });
+      .json({ message: `Method ${req.method} Not Allowed` })
   }
 
   // ---------------------------------------------------------------------------
   // 2. Authentication Check
   // ---------------------------------------------------------------------------
-  const session = await getServerSession(req, res, authOptions);
+  const session = await getServerSession(req, res, authOptions)
 
   if (!session) {
     return res
       .status(401)
-      .json({ message: "Unauthorized: Active session required." });
+      .json({ message: 'Unauthorized: Active session required.' })
   }
 
   // ---------------------------------------------------------------------------
@@ -114,43 +115,43 @@ export default async function handler(req, res) {
   const form = formidable({
     multiples: false,
     keepExtensions: true,
-  });
+  })
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error("Error parsing multipart form:", err);
-      return res.status(400).json({ message: "Error parsing file data." });
+      console.error('Error parsing multipart form:', err)
+      return res.status(400).json({ message: 'Error parsing file data.' })
     }
 
     // Safely retrieve the uploaded file (handles Formidable v2/v3 array structures)
-    const rawFile = files.file || files[Object.keys(files)[0]];
-    const file = Array.isArray(rawFile) ? rawFile[0] : rawFile;
+    const rawFile = files.file || files[Object.keys(files)[0]]
+    const file = Array.isArray(rawFile) ? rawFile[0] : rawFile
 
-    const filePath = file?.filepath || file?.path;
+    const filePath = file?.filepath || file?.path
 
     if (!file || !filePath) {
       return res
         .status(400)
-        .json({ message: "No image file provided in request." });
+        .json({ message: 'No image file provided in request.' })
     }
 
     try {
-      const publicId = `uploads/${file.newFilename || file.filename || Date.now()}`;
+      const publicId = `uploads/${file.newFilename || file.filename || Date.now()}`
 
       const uploadResult = await cloudinary.uploader.upload(filePath, {
         public_id: publicId,
         overwrite: true,
-      });
+      })
 
       return res.status(200).json({
         public_id: uploadResult.public_id,
         url: uploadResult.secure_url || uploadResult.url,
-      });
+      })
     } catch (uploadError) {
-      console.error("Cloudinary upload error:", uploadError);
+      console.error('Cloudinary upload error:', uploadError)
       return res
         .status(500)
-        .json({ message: "Failed to upload file to Cloudinary." });
+        .json({ message: 'Failed to upload file to Cloudinary.' })
     }
-  });
+  })
 }

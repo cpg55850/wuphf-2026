@@ -1,7 +1,7 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../../../lib/authOptions";
+import { getServerSession } from 'next-auth/next'
 
-import { Prisma, prisma } from "../../../../lib/prisma";
+import { authOptions } from '../../../../lib/authOptions'
+import { Prisma, prisma } from '../../../../lib/prisma'
 
 /**
  * @openapi
@@ -157,96 +157,96 @@ import { Prisma, prisma } from "../../../../lib/prisma";
  *                   type: object
  */
 export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions);
-  const rawUid = req.query.uid;
+  const session = await getServerSession(req, res, authOptions)
+  const rawUid = req.query.uid
 
   if (!rawUid || Array.isArray(rawUid)) {
     return res
       .status(400)
-      .json({ message: "Invalid or missing user ID parameter." });
+      .json({ message: 'Invalid or missing user ID parameter.' })
   }
 
-  const uid = decodeURIComponent(rawUid);
+  const uid = decodeURIComponent(rawUid)
 
   // ---------------------------------------------------------------------------
   // GET: Retrieve following list
   // ---------------------------------------------------------------------------
-  if (req.method === "GET") {
+  if (req.method === 'GET') {
     try {
-      let targetUsername = uid;
+      let targetUsername = uid
 
       // If session exists, resolve username from the logged-in user's email
       if (session?.user?.email) {
         const wuphfUser = await prisma.wuphfUser.findUnique({
           where: { email: session.user.email },
-        });
+        })
 
         if (!wuphfUser) {
           return res.status(404).json({
             message: `No WuphfUser found with the email ${session.user.email}`,
-          });
+          })
         }
-        targetUsername = wuphfUser.userName;
+        targetUsername = wuphfUser.userName
       }
 
       const users = await prisma.follower.findMany({
         where: { followerId: targetUsername },
         select: { userId: true },
-      });
+      })
 
-      return res.status(200).json(users);
+      return res.status(200).json(users)
     } catch (error) {
-      console.error("Error in GET /api/users/[uid]/following:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in GET /api/users/[uid]/following:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // ---------------------------------------------------------------------------
   // Helper: Resolve current operating user for POST / DELETE
   // ---------------------------------------------------------------------------
-  const userEmail = session?.user?.email || req.body?.email;
+  const userEmail = session?.user?.email || req.body?.email
 
   if (!userEmail) {
     return res
       .status(401)
-      .json({ message: "Unauthorized: Session or valid email required." });
+      .json({ message: 'Unauthorized: Session or valid email required.' })
   }
 
-  let currentUser;
+  let currentUser
   try {
     currentUser = await prisma.wuphfUser.findUnique({
       where: { email: userEmail },
-    });
+    })
   } catch (error) {
-    console.error("Error resolving user profile:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error('Error resolving user profile:', error)
+    return res.status(500).json({ message: 'Internal server error' })
   }
 
   if (!currentUser) {
     return res.status(404).json({
       message: `No WuphfUser found for ${userEmail}`,
-    });
+    })
   }
 
-  const currentUsername = currentUser.userName;
+  const currentUsername = currentUser.userName
 
   // ---------------------------------------------------------------------------
   // POST: Follow a user
   // ---------------------------------------------------------------------------
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
     if (uid === currentUsername) {
-      return res.status(400).json({ message: "You cannot follow yourself" });
+      return res.status(400).json({ message: 'You cannot follow yourself' })
     }
 
     try {
       const userToFollow = await prisma.wuphfUser.findUnique({
         where: { userName: uid },
-      });
+      })
 
       if (!userToFollow) {
         return res.status(404).json({
-          message: "The WuphfUser you are trying to follow does not exist",
-        });
+          message: 'The WuphfUser you are trying to follow does not exist',
+        })
       }
 
       await prisma.follower.create({
@@ -254,35 +254,35 @@ export default async function handler(req, res) {
           userId: uid,
           followerId: currentUsername,
         },
-      });
+      })
 
-      return res.status(200).send(`Followed ${uid}`);
+      return res.status(200).send(`Followed ${uid}`)
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
+        error.code === 'P2002'
       ) {
-        return res.status(200).send(`Already following ${uid}`);
+        return res.status(200).send(`Already following ${uid}`)
       }
 
-      console.error("Error in POST /api/users/[uid]/following:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in POST /api/users/[uid]/following:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // ---------------------------------------------------------------------------
   // DELETE: Unfollow a user
   // ---------------------------------------------------------------------------
-  if (req.method === "DELETE") {
+  if (req.method === 'DELETE') {
     try {
       const userToUnfollow = await prisma.wuphfUser.findUnique({
         where: { userName: uid },
-      });
+      })
 
       if (!userToUnfollow) {
         return res.status(404).json({
-          message: "The WuphfUser you are trying to unfollow does not exist",
-        });
+          message: 'The WuphfUser you are trying to unfollow does not exist',
+        })
       }
 
       await prisma.follower.delete({
@@ -292,25 +292,25 @@ export default async function handler(req, res) {
             followerId: currentUsername,
           },
         },
-      });
+      })
 
-      return res.status(200).send(`Unfollowed ${uid}`);
+      return res.status(200).send(`Unfollowed ${uid}`)
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
+        error.code === 'P2025'
       ) {
         return res.status(404).json({
-          message: "Follow relationship does not exist",
-        });
+          message: 'Follow relationship does not exist',
+        })
       }
 
-      console.error("Error in DELETE /api/users/[uid]/following:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in DELETE /api/users/[uid]/following:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // Handle unsupported methods
-  res.setHeader("Allow", ["GET", "POST", "DELETE"]);
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  res.setHeader('Allow', ['GET', 'POST', 'DELETE'])
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
 }

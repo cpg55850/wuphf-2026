@@ -5,3 +5,11 @@ docker compose exec app npx prisma db seed
 
 docker-compose down -v                                  
 docker-compose up --build --force-recreate -d
+
+
+docker compose --env-file .env.production -f docker-compose.prod.yml up --build
+
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose --env-file .env.production -f docker-compose.prod.yml up
+
+docker push charliechip95/wuphf:v1.0

@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from '../../lib/prisma'
 
 /**
  * @openapi
@@ -52,21 +52,21 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 1. Method Guard & Headers
   // ---------------------------------------------------------------------------
-  if (req.method !== "GET") {
-    res.setHeader("Allow", ["GET"]);
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET'])
     return res
       .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` });
+      .json({ message: `Method ${req.method} Not Allowed` })
   }
 
   // ---------------------------------------------------------------------------
   // 2. GET: Retrieve all avatars
   // ---------------------------------------------------------------------------
   try {
-    const avatars = await prisma.avatar.findMany();
-    return res.status(200).json(avatars);
+    const avatars = await prisma.avatar.findMany()
+    return res.status(200).json(avatars)
   } catch (error) {
-    console.error("Error in GET /api/avatars:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error('Error in GET /api/avatars:', error)
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }

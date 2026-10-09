@@ -6,10 +6,10 @@ import axios from 'axios'
 import styled from 'styled-components'
 
 
+import FollowerModal from './FollowerModal'
 import { useWuphfUser } from '../../hooks/WuphfUserContext'
 import Button from '../general/Button'
 import RoundButton from '../general/RoundButton'
-import FollowerModal from './FollowerModal'
 
 
 export default function FollowInformation(props) {

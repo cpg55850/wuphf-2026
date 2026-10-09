@@ -1,13 +1,11 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: dev
     command: >
       sh -c "
-        echo 'Waiting for PostgreSQL to be fully ready...' &&
-        until echo 'SELECT 1;' | npx prisma db execute --stdin > /dev/null 2>&1; do
-          sleep 1
-        done &&
-        echo 'PostgreSQL is ready! Running migrations...' &&
+        echo 'Running DB migrations...' &&
         npx prisma migrate deploy &&
         npx prisma db seed &&
         npm run dev
@@ -35,7 +33,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    # 1. Define how Docker checks if Postgres is ready to accept connections
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d wuphf"]
       interval: 5s
@@ -48,6 +45,6 @@ services:
 networks:
   wuphf-net:
     driver: bridge
-    enable_ipv6: false
+
 volumes:
   postgres-data:

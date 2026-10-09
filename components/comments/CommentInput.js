@@ -1,52 +1,52 @@
-import { useState } from "react";
+import { useState } from 'react'
 
-import axios from "axios";
-import { useRouter } from "next/router";
-import styled from "styled-components";
+import axios from 'axios'
+import { useRouter } from 'next/router'
+import styled from 'styled-components'
 
-import { useWuphfUser } from "../../hooks/WuphfUserContext";
-import Avatar from "../general/Avatar";
-import Button from "../general/Button";
+import { useWuphfUser } from '../../hooks/WuphfUserContext'
+import Avatar from '../general/Avatar'
+import Button from '../general/Button'
 /*
 What I need in Props:
 wuphfID
 theme colors
 */
 function CommentInput(props) {
-  const { addComment, wuphfId } = props;
-  const [comment, setComment] = useState("");
-  const { wuphfUser } = useWuphfUser();
-  const router = useRouter();
+  const { addComment, wuphfId } = props
+  const [comment, setComment] = useState('')
+  const { wuphfUser } = useWuphfUser()
+  const router = useRouter()
 
   // Fallback to route query parameter 'wid' if props.wuphfId isn't passed directly
-  const targetId = wuphfId || router.query.wid || router.query.id;
+  const targetId = wuphfId || router.query.wid || router.query.id
 
   function handleChange(event) {
-    setComment(event.target.value);
+    setComment(event.target.value)
   }
 
   async function commentRequest() {
-    if (!comment.trim()) return;
+    if (!comment.trim()) return
 
     try {
       // axios automatically sends cookies on same-origin /api requests
       const res = await axios.post(`/api/wuphfs/${targetId}/comments`, {
         commentBody: comment,
-      });
+      })
 
       if (res.data) {
-        addComment(res.data);
-        setComment("");
+        addComment(res.data)
+        setComment('')
       }
     } catch (err) {
-      console.error("Error submitting comment:", err);
-      alert(err.response?.data?.message || "Failed to submit comment.");
+      console.error('Error submitting comment:', err)
+      alert(err.response?.data?.message || 'Failed to submit comment.')
     }
   }
 
   async function handleSubmit(event) {
-    event.preventDefault();
-    await commentRequest();
+    event.preventDefault()
+    await commentRequest()
   }
 
   return (
@@ -68,7 +68,7 @@ function CommentInput(props) {
         Comment!
       </Button>
     </InputWrapper>
-  );
+  )
 }
 
 const InputWrapper = styled.form`
@@ -82,7 +82,7 @@ const InputWrapper = styled.form`
   background-color: ${(props) => props.theme.colors.highlight};
   border: ${({ theme }) => `1.5px solid ${theme.colors.border}`};
   border-top: none;
-`;
+`
 
 const AvatarWrapper = styled.div`
   position: relative;
@@ -91,7 +91,7 @@ const AvatarWrapper = styled.div`
     width: 50px;
     height: 50px;
   }
-`;
+`
 const CommentTextArea = styled.textarea`
   font-size: inherit;
   font-family: inherit;
@@ -105,10 +105,10 @@ const CommentTextArea = styled.textarea`
   width: 100%;
   border: ${(props) =>
     props.error
-      ? "1.5px solid red"
+      ? '1.5px solid red'
       : `1.5px solid ${props.theme.colors.border}`};
   &:focus {
     outline: none;
   }
-`;
-export default CommentInput;
+`
+export default CommentInput

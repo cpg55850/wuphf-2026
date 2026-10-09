@@ -1,24 +1,52 @@
-# Use the official Node.js runtime as a parent image
-FROM node:20
-
-# Set the working directory in the container
+# ---------------------------------------------------
+# Stage 1: Base (Shared dependencies & Prisma client)
+# ---------------------------------------------------
+FROM node:20 AS base
 WORKDIR /app
 
-# Copy dependency definitions and prisma schema first for better caching
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install any needed packages specified in package.json
 RUN npm install --legacy-peer-deps
-
-# Generate Prisma client
 RUN npx prisma generate
 
-# Bundle app source inside Docker image
+# ---------------------------------------------------
+# Stage 2: Development Target (For your local workflow)
+# ---------------------------------------------------
+FROM base AS dev
+ENV NODE_ENV=development
+
 COPY . .
 
-# Make port 3000 available to the world outside this container
 EXPOSE 3000
+CMD ["npm", "run", "dev"]
 
-# Define environment variable
-ENV NODE_ENV development
+# ---------------------------------------------------
+# Stage 3: Builder (Compiles Next.js/TS for Production)
+# ---------------------------------------------------
+FROM base AS builder
+COPY . .
+RUN npm run build
+
+# ---------------------------------------------------
+# Stage 4: Production Target (Minimal, published image)
+# ---------------------------------------------------
+FROM node:20 AS prod
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package*.json ./
+# Install production dependencies (including prisma CLI if under dependencies)
+RUN npm ci --only=production --legacy-peer-deps
+
+# Copy Prisma schema and migrations so "prisma migrate deploy" works
+COPY --from=base /app/prisma ./prisma
+
+# Copy generated Prisma engine binaries & compiled app assets
+COPY --from=base /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=base /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+EXPOSE 3000
+CMD ["npm", "start"]

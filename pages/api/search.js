@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from '../../lib/prisma'
 
 /**
  * @openapi
@@ -47,25 +47,25 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 1. Method Check & Headers
   // ---------------------------------------------------------------------------
-  if (req.method !== "GET") {
-    res.setHeader("Allow", ["GET"]);
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET'])
     return res
       .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` });
+      .json({ message: `Method ${req.method} Not Allowed` })
   }
 
   // ---------------------------------------------------------------------------
   // 2. Input Validation & Sanitization
   // ---------------------------------------------------------------------------
-  const rawQuery = req.query.userName;
+  const rawQuery = req.query.userName
 
   if (!rawQuery || Array.isArray(rawQuery) || !rawQuery.trim()) {
     return res.status(400).json({
-      message: "Query parameter 'userName' must be a non-empty string.",
-    });
+      message: 'Query parameter \'userName\' must be a non-empty string.',
+    })
   }
 
-  const searchQuery = rawQuery.trim();
+  const searchQuery = rawQuery.trim()
 
   // ---------------------------------------------------------------------------
   // 3. Query Database
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
       where: {
         userName: {
           contains: searchQuery,
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       },
       select: {
@@ -86,11 +86,11 @@ export default async function handler(req, res) {
           },
         },
       },
-    });
+    })
 
-    return res.status(200).json(users);
+    return res.status(200).json(users)
   } catch (error) {
-    console.error("Error in GET /api/users/search:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error('Error in GET /api/users/search:', error)
+    return res.status(500).json({ message: 'Internal server error' })
   }
 }

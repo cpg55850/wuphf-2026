@@ -2,9 +2,9 @@ import React from 'react'
 
 import styled from 'styled-components'
 
+import Comment from './Comment'
 import Loading from '../layout/Loading'
 import { MessageBox } from '../styledComponents/MessageBox'
-import Comment from './Comment'
 
 function Comments({ comments, commentsLoading }) {
 	if (commentsLoading) {

@@ -1,10 +1,11 @@
 // pages/doc.js
-import dynamic from 'next/dynamic';
-import Head from 'next/head';
-import { getApiDocs } from '../swagger';
+import dynamic from 'next/dynamic'
+import Head from 'next/head'
+
+import { getApiDocs } from '../swagger'
 
 // Dynamically load swagger-ui-react on the client side only
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false })
 
 export default function ApiDoc({ spec }) {
   return (
@@ -20,14 +21,14 @@ export default function ApiDoc({ spec }) {
         <SwaggerUI spec={spec} />
       </div>
     </>
-  );
+  )
 }
 
 export async function getStaticProps() {
-  const spec = await getApiDocs();
+  const spec = await getApiDocs()
   return {
     props: {
       spec,
     },
-  };
+  }
 }

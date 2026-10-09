@@ -1,5 +1,6 @@
-import { Prisma, prisma } from "../../../lib/prisma";
-import * as yup from "yup";
+import * as yup from 'yup'
+
+import { Prisma, prisma } from '../../../lib/prisma'
 
 /**
  * @openapi
@@ -138,50 +139,50 @@ const createUserSchema = yup.object({
   email: yup
     .string()
     .trim()
-    .email("Invalid email address format.")
-    .required("Email is required."),
+    .email('Invalid email address format.')
+    .required('Email is required.'),
   userName: yup
     .string()
     .trim()
-    .min(3, "Username must be at least 3 characters.")
-    .max(30, "Username cannot exceed 30 characters.")
+    .min(3, 'Username must be at least 3 characters.')
+    .max(30, 'Username cannot exceed 30 characters.')
     .matches(
       /^[a-zA-Z0-9_-]+$/,
-      "Username can only contain letters, numbers, underscores, and hyphens.",
+      'Username can only contain letters, numbers, underscores, and hyphens.',
     )
-    .required("Username is required."),
+    .required('Username is required.'),
   bio: yup.string().trim().nullable().optional(),
   avatarId: yup
     .number()
-    .integer("Avatar ID must be an integer.")
+    .integer('Avatar ID must be an integer.')
     .nullable()
     .optional(),
-});
+})
 
 export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // GET: Retrieve all users
   // ---------------------------------------------------------------------------
-  if (req.method === "GET") {
+  if (req.method === 'GET') {
     try {
-      const users = await prisma.wuphfUser.findMany();
-      return res.status(200).json(users);
+      const users = await prisma.wuphfUser.findMany()
+      return res.status(200).json(users)
     } catch (error) {
-      console.error("Error in GET /api/users:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in GET /api/users:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
   // ---------------------------------------------------------------------------
   // POST: Create a new user profile
   // ---------------------------------------------------------------------------
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
     try {
       // Validate request body against schema
       const validatedData = await createUserSchema.validate(req.body, {
         abortEarly: true,
         stripUnknown: true,
-      });
+      })
 
       const user = await prisma.wuphfUser.create({
         data: {
@@ -190,34 +191,34 @@ export default async function handler(req, res) {
           bio: validatedData.bio || undefined,
           avatarId: validatedData.avatarId ?? undefined,
         },
-      });
+      })
 
-      return res.status(201).json(user);
+      return res.status(201).json(user)
     } catch (error) {
       // Catch Yup validation errors
       if (error instanceof yup.ValidationError) {
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: error.message })
       }
 
       // Catch Prisma errors
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2002") {
+        if (error.code === 'P2002') {
           return res.status(409).json({
-            message: "A user with that username or email already exists.",
-          });
+            message: 'A user with that username or email already exists.',
+          })
         }
-        if (error.code === "P2003") {
+        if (error.code === 'P2003') {
           return res.status(409).json({
-            message: "Invalid avatarId or foreign key constraint failed.",
-          });
+            message: 'Invalid avatarId or foreign key constraint failed.',
+          })
         }
       }
 
-      console.error("Error in POST /api/users:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error('Error in POST /api/users:', error)
+      return res.status(500).json({ message: 'Internal server error' })
     }
   }
   // Handle unsupported methods
-  res.setHeader("Allow", ["GET", "POST"]);
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  res.setHeader('Allow', ['GET', 'POST'])
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
 }

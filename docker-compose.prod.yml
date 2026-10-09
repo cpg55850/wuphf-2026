@@ -1,0 +1,43 @@
+services:
+  app:
+    image: charliechip95/wuphf:v1.0
+    command: >
+      sh -c "
+        echo 'Running DB migrations...' &&
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        npm start
+      "
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    networks:
+      - wuphf-net
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-prod-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - wuphf-net
+
+networks:
+  wuphf-net:
+    driver: bridge
+
+volumes:
+  postgres-prod-data:
