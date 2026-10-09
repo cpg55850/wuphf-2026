@@ -1,5 +1,6 @@
 import { object, string } from "yup";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../lib/authOptions";
 import { prisma } from "../../../lib/prisma";
 
 /**
@@ -238,7 +239,7 @@ export default async function handler(req, res) {
     }
 
     // Resolve Author Identity (Session with body fallback)
-    const session = await getSession({ req });
+    const session = await getServerSession(req, res, authOptions);
     let authorUsername = null;
 
     try {

@@ -1,6 +1,31 @@
-import { getSession } from "next-auth/react";
-
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../../lib/authOptions";
+import * as yup from "yup";
 import { prisma } from "../../../../lib/prisma";
+
+// Yup schema for validating path parameters
+const paramsSchema = yup.string().required("User ID parameter is required.");
+
+// Yup schema for updating profile fields via PATCH
+const updateUserSchema = yup.object({
+  userName: yup
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters.")
+    .max(30, "Username cannot exceed 30 characters.")
+    .matches(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username can only contain letters, numbers, underscores, and hyphens.",
+    )
+    .optional(),
+  bio: yup.string().trim().nullable().optional(),
+  theme: yup.string().trim().nullable().optional(),
+  avatarId: yup
+    .number()
+    .integer("Avatar ID must be an integer.")
+    .nullable()
+    .optional(),
+});
 
 /**
  * @openapi
@@ -78,8 +103,9 @@ import { prisma } from "../../../../lib/prisma";
  *             properties:
  *               userName:
  *                 type: string
+ *                 pattern: '^[a-zA-Z0-9_-]+$'
  *                 example: "pam_beesly_new"
- *                 description: Updated unique username.
+ *                 description: Updated unique username (allows letters, numbers, underscores, and hyphens).
  *               bio:
  *                 type: string
  *                 example: "Dunder Mifflin receptionist and artist."
@@ -108,7 +134,7 @@ import { prisma } from "../../../../lib/prisma";
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Username already taken."
+ *                   example: "Username can only contain letters, numbers, underscores, and hyphens."
  *       401:
  *         description: Unauthorized session.
  *         content:
@@ -324,7 +350,7 @@ import { prisma } from "../../../../lib/prisma";
  *                   example: "https://example.com/avatars/jim.png"
  */
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   const rawUid = req.query.uid;
 
   if (!rawUid || Array.isArray(rawUid)) {
@@ -333,7 +359,12 @@ export default async function handler(req, res) {
       .json({ message: "Invalid or missing user ID parameter." });
   }
 
-  const uid = decodeURIComponent(rawUid);
+  let uid;
+  try {
+    uid = await paramsSchema.validate(decodeURIComponent(rawUid));
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
 
   // ---------------------------------------------------------------------------
   // GET: Retrieve user profile
@@ -402,7 +433,6 @@ export default async function handler(req, res) {
           }
         }
       } else {
-        // Unauthenticated viewers shouldn't see detailed follower arrays
         delete user.Followers;
         delete user.Following;
       }
@@ -448,13 +478,23 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   if (req.method === "PATCH") {
     try {
+      // Validate request body
+      const validatedBody = await updateUserSchema.validate(req.body, {
+        abortEarly: true,
+        stripUnknown: true,
+      });
+
       const updatedUser = await prisma.wuphfUser.update({
         where: { userName: uid },
         data: {
-          userName: req.body.userName || undefined,
-          bio: req.body.bio || undefined,
-          theme: req.body.theme || undefined,
-          avatarId: req.body.avatarId || undefined,
+          userName: validatedBody.userName || undefined,
+          bio: validatedBody.bio !== undefined ? validatedBody.bio : undefined,
+          theme:
+            validatedBody.theme !== undefined ? validatedBody.theme : undefined,
+          avatarId:
+            validatedBody.avatarId !== undefined
+              ? validatedBody.avatarId
+              : undefined,
         },
         include: {
           avatar: {
@@ -465,19 +505,21 @@ export default async function handler(req, res) {
 
       return res.status(200).json(updatedUser);
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
-      ) {
-        return res.status(404).json({ message: "No WuphfUser found" });
+      // Catch Yup validation errors
+      if (error instanceof yup.ValidationError) {
+        return res.status(400).json({ message: error.message });
       }
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
-      ) {
-        return res
-          .status(400)
-          .json({ message: "Username or unique field already in use." });
+
+      // Catch Prisma errors
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res.status(404).json({ message: "No WuphfUser found" });
+        }
+        if (error.code === "P2002") {
+          return res
+            .status(400)
+            .json({ message: "Username or unique field already in use." });
+        }
       }
 
       console.error("Error in PATCH /api/users/[uid]:", error);

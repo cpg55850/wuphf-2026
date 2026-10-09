@@ -1,4 +1,5 @@
 import { Prisma, prisma } from "../../../lib/prisma";
+import * as yup from "yup";
 
 /**
  * @openapi
@@ -131,6 +132,32 @@ import { Prisma, prisma } from "../../../lib/prisma";
  *           format: date-time
  *           example: "2026-10-08T04:51:00.000Z"
  */
+
+// Yup validation schema for user creation
+const createUserSchema = yup.object({
+  email: yup
+    .string()
+    .trim()
+    .email("Invalid email address format.")
+    .required("Email is required."),
+  userName: yup
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters.")
+    .max(30, "Username cannot exceed 30 characters.")
+    .matches(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username can only contain letters, numbers, underscores, and hyphens.",
+    )
+    .required("Username is required."),
+  bio: yup.string().trim().nullable().optional(),
+  avatarId: yup
+    .number()
+    .integer("Avatar ID must be an integer.")
+    .nullable()
+    .optional(),
+});
+
 export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // GET: Retrieve all users
@@ -149,36 +176,30 @@ export default async function handler(req, res) {
   // POST: Create a new user profile
   // ---------------------------------------------------------------------------
   if (req.method === "POST") {
-    const { email, userName, bio, avatarId } = req.body || {};
-
-    // Input Validation
-    if (
-      !email ||
-      typeof email !== "string" ||
-      !userName ||
-      typeof userName !== "string" ||
-      !userName.trim()
-    ) {
-      return res.status(400).json({
-        message: "Valid 'email' and non-empty 'userName' are required.",
-      });
-    }
-
     try {
-      const parsedAvatarId =
-        avatarId !== undefined && avatarId !== null ? Number(avatarId) : NaN;
+      // Validate request body against schema
+      const validatedData = await createUserSchema.validate(req.body, {
+        abortEarly: true,
+        stripUnknown: true,
+      });
 
       const user = await prisma.wuphfUser.create({
         data: {
-          email: email.trim(),
-          userName: userName.trim(),
-          bio: bio || undefined,
-          avatarId: !isNaN(parsedAvatarId) ? parsedAvatarId : undefined,
+          email: validatedData.email,
+          userName: validatedData.userName,
+          bio: validatedData.bio || undefined,
+          avatarId: validatedData.avatarId ?? undefined,
         },
       });
 
       return res.status(201).json(user);
     } catch (error) {
+      // Catch Yup validation errors
+      if (error instanceof yup.ValidationError) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      // Catch Prisma errors
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
           return res.status(409).json({
@@ -196,7 +217,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "Internal server error" });
     }
   }
-
   // Handle unsupported methods
   res.setHeader("Allow", ["GET", "POST"]);
   return res.status(405).json({ message: `Method ${req.method} Not Allowed` });

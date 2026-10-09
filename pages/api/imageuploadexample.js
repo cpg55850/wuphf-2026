@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import formidable from "formidable";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../lib/authOptions";
 
 // Configure Cloudinary using environment variables
 cloudinary.config({
@@ -99,7 +100,7 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 2. Authentication Check
   // ---------------------------------------------------------------------------
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return res

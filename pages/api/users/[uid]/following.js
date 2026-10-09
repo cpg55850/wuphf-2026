@@ -1,4 +1,5 @@
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../../lib/authOptions";
 
 import { Prisma, prisma } from "../../../../lib/prisma";
 
@@ -156,7 +157,7 @@ import { Prisma, prisma } from "../../../../lib/prisma";
  *                   type: object
  */
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   const rawUid = req.query.uid;
 
   if (!rawUid || Array.isArray(rawUid)) {

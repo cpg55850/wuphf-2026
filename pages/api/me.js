@@ -1,4 +1,5 @@
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../lib/authOptions";
 
 import { prisma } from "../../lib/prisma";
 
@@ -162,7 +163,7 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 1. Authentication Check
   // ---------------------------------------------------------------------------
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session?.user?.email) {
     return res
