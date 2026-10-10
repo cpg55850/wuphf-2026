@@ -80,14 +80,6 @@ function AccountSettings() {
       const updatedBio = getValues('biography_textarea')
       const updatedAvatarUrl = getValues('avatar')
 
-      // Optimistic Update
-      setWuphfUser((prev) => ({
-        ...prev,
-        userName: updatedUsername,
-        bio: updatedBio,
-        avatar: { ...prev?.avatar, url: updatedAvatarUrl },
-      }))
-
       try {
         const res = await axios.patch(
           `/api/users/${encodeURIComponent(wuphfUser.userName)}`,
@@ -132,13 +124,10 @@ function AccountSettings() {
 
   async function handleDeleteButtonClick(e) {
     e.preventDefault()
-    if (!window.confirm('Are you sure you want to delete your account?'))
-      return
+    if (!window.confirm('Are you sure you want to delete your account?')) return
 
     try {
-      await axios.delete(
-        `/api/users/${encodeURIComponent(wuphfUser.userName)}`,
-      )
+      await axios.delete(`/api/users/${encodeURIComponent(wuphfUser.userName)}`)
       signOut()
     } catch (err) {
       console.error('Failed to delete account:', err)
