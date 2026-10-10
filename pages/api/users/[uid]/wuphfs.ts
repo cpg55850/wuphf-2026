@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
 import { authOptions } from '../../../../lib/authOptions'
@@ -108,18 +109,17 @@ import { prisma } from '../../../../lib/prisma'
  *               type: integer
  *               example: 4
  */
-export default async function handler(req, res) {
-  // ---------------------------------------------------------------------------
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   // 1. Method Guard & Headers
-  // ---------------------------------------------------------------------------
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET'])
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
   }
 
-  // ---------------------------------------------------------------------------
   // 2. Query Validation & Parsing
-  // ---------------------------------------------------------------------------
   const rawUid = req.query.uid
 
   if (!rawUid || Array.isArray(rawUid)) {
@@ -128,11 +128,17 @@ export default async function handler(req, res) {
       .json({ message: 'Invalid or missing user ID parameter.' })
   }
 
-  const uid = decodeURIComponent(rawUid)
+  let uid: string
 
-  // ---------------------------------------------------------------------------
+  try {
+    uid = decodeURIComponent(rawUid)
+  } catch {
+    return res
+      .status(400)
+      .json({ message: 'Invalid or missing user ID parameter.' })
+  }
+
   // 3. Main Route Execution
-  // ---------------------------------------------------------------------------
   try {
     // Check if the requested user exists
     const targetUserExists = await prisma.wuphfUser.findUnique({
@@ -146,21 +152,22 @@ export default async function handler(req, res) {
         .json({ message: `No WuphfUser found with username ${uid}` })
     }
 
-    // Resolve current evaluating user username (for checking `userLikePost`)
+    // Resolve the current viewer's username for checking userLikePost
     const session = await getServerSession(req, res, authOptions)
-    let viewerUsername = null
+    let viewerUsername: string | null = null
 
     if (session?.user?.email) {
       const sessionUser = await prisma.wuphfUser.findUnique({
         where: { email: session.user.email },
         select: { userName: true },
       })
-      viewerUsername = sessionUser?.userName || null
+
+      viewerUsername = sessionUser?.userName ?? null
     } else if (typeof req.query.viewer === 'string') {
       viewerUsername = req.query.viewer
     }
 
-    // Fetch user's Wuphfs
+    // Fetch the user's Wuphfs
     const rawWuphfs = await prisma.wuphf.findMany({
       where: {
         userId: uid,
@@ -193,12 +200,13 @@ export default async function handler(req, res) {
       },
     })
 
-    // Format output and determine `userLikePost` status
+    // Format output and determine userLikePost status
     const wuphfs = rawWuphfs.map((wuphf) => {
       const { Likes, ...restWuphf } = wuphf
+
       return {
         ...restWuphf,
-        userLikePost: viewerUsername ? (Likes?.length ?? 0) > 0 : false,
+        userLikePost: viewerUsername ? Likes.length > 0 : false,
       }
     })
 

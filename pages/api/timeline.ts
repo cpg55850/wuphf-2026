@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
 import { authOptions } from '../../lib/authOptions'
@@ -29,16 +30,18 @@ import { prisma } from '../../lib/prisma'
  *       500:
  *         description: Server error
  */
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET'])
-    return res
-      .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` })
+    return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
   }
 
   try {
     const session = await getServerSession(req, res, authOptions)
+
     let wuphfUser = null
 
     if (session?.user?.email) {
@@ -47,11 +50,12 @@ export default async function handler(req, res) {
       })
     }
 
-    // Determine target username from session or fallback query param
+    // Determine the target username from the session or query parameter.
     const rawFollowerId = req.query.followerId
     const fallbackFollowerId = Array.isArray(rawFollowerId)
       ? rawFollowerId[0]
       : rawFollowerId
+
     const targetUsername = wuphfUser?.userName || fallbackFollowerId
 
     if (!targetUsername) {
@@ -61,7 +65,7 @@ export default async function handler(req, res) {
       })
     }
 
-    // Fetch followed users and append the current user
+    // Fetch followed users and include the target user.
     const following = await prisma.follower.findMany({
       where: { followerId: targetUsername },
       select: { userId: true },
@@ -69,20 +73,31 @@ export default async function handler(req, res) {
 
     const targetUsernames = [...following.map((f) => f.userId), targetUsername]
 
-    // Parse pagination parameters safely
-    const rawMaxResults = req.query.maxResults
-    const parsedMaxResults = rawMaxResults
-      ? parseInt(String(rawMaxResults), 10)
-      : 20
-    const take = Number.isNaN(parsedMaxResults) ? 20 : parsedMaxResults
+    // Parse and validate pagination parameters.
+    const rawMaxResults = Array.isArray(req.query.maxResults)
+      ? req.query.maxResults[0]
+      : req.query.maxResults
 
-    const rawCursor = req.query.cursor
-    const parsedCursor = rawCursor
-      ? parseInt(String(rawCursor), 10)
-      : undefined
-    const cursor = Number.isNaN(parsedCursor) ? undefined : parsedCursor
+    const parsedMaxResults =
+      rawMaxResults === undefined ? 20 : Number(rawMaxResults)
 
-    // Query timeline posts from Prisma
+    const take =
+      Number.isInteger(parsedMaxResults) && parsedMaxResults > 0
+        ? Math.min(parsedMaxResults, 100)
+        : 20
+
+    const rawCursor = Array.isArray(req.query.cursor)
+      ? req.query.cursor[0]
+      : req.query.cursor
+
+    const parsedCursor = rawCursor === undefined ? undefined : Number(rawCursor)
+
+    const cursor =
+      Number.isInteger(parsedCursor) && parsedCursor! > 0
+        ? parsedCursor
+        : undefined
+
+    // Query timeline posts from Prisma.
     const rawWuphfs = await prisma.wuphf.findMany({
       take,
       ...(cursor !== undefined && {
@@ -113,14 +128,16 @@ export default async function handler(req, res) {
       },
     })
 
-    // Format response and compute boolean like status for current user
+    // Calculate whether the current user liked each post.
     const currentUsername = wuphfUser?.userName
+
     const timeline = rawWuphfs.map((wuphf) => {
       const userLikePost = currentUsername
         ? wuphf.Likes.some((like) => like.userId === currentUsername)
         : false
 
       const { Likes, ...wuphfData } = wuphf
+
       return {
         ...wuphfData,
         userLikePost,
@@ -136,6 +153,9 @@ export default async function handler(req, res) {
     })
   } catch (error) {
     console.error('Error fetching timeline:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 }

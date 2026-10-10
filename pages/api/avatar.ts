@@ -1,3 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+
 import { prisma } from '../../lib/prisma'
 
 /**
@@ -48,25 +50,29 @@ import { prisma } from '../../lib/prisma'
  *           format: date-time
  *           example: "2026-10-08T04:42:45.000Z"
  */
-export default async function handler(req, res) {
-  // ---------------------------------------------------------------------------
-  // 1. Method Guard & Headers
-  // ---------------------------------------------------------------------------
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // Only allow GET requests.
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET'])
-    return res
-      .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` })
+
+    return res.status(405).json({
+      message: `Method ${req.method} Not Allowed`,
+    })
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. GET: Retrieve all avatars
-  // ---------------------------------------------------------------------------
+  // Retrieve all avatars.
   try {
     const avatars = await prisma.avatar.findMany()
+
     return res.status(200).json(avatars)
   } catch (error) {
     console.error('Error in GET /api/avatars:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 }

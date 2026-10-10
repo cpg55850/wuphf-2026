@@ -1,3 +1,5 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+
 import { prisma } from '../../lib/prisma'
 
 /**
@@ -43,33 +45,32 @@ import { prisma } from '../../lib/prisma'
  *                 error:
  *                   type: object
  */
-export default async function handler(req, res) {
-  // ---------------------------------------------------------------------------
-  // 1. Method Check & Headers
-  // ---------------------------------------------------------------------------
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // 1. Method check
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET'])
-    return res
-      .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` })
+
+    return res.status(405).json({
+      message: `Method ${req.method} Not Allowed`,
+    })
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. Input Validation & Sanitization
-  // ---------------------------------------------------------------------------
+  // 2. Input validation and sanitization
   const rawQuery = req.query.userName
 
-  if (!rawQuery || Array.isArray(rawQuery) || !rawQuery.trim()) {
+  if (typeof rawQuery !== 'string' || !rawQuery.trim()) {
     return res.status(400).json({
-      message: 'Query parameter \'userName\' must be a non-empty string.',
+      message: "Query parameter 'userName' must be a non-empty string.",
     })
   }
 
   const searchQuery = rawQuery.trim()
 
-  // ---------------------------------------------------------------------------
-  // 3. Query Database
-  // ---------------------------------------------------------------------------
+  // 3. Query database
   try {
     const users = await prisma.wuphfUser.findMany({
       where: {
@@ -90,7 +91,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json(users)
   } catch (error) {
-    console.error('Error in GET /api/users/search:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    console.error('Error in GET /api/search:', error)
+
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 }

@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 import * as yup from 'yup'
 
@@ -350,26 +351,34 @@ const updateUserSchema = yup.object({
  *                   type: string
  *                   example: "https://example.com/avatars/jim.png"
  */
-export default async function handler(req, res) {
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const session = await getServerSession(req, res, authOptions)
   const rawUid = req.query.uid
 
   if (!rawUid || Array.isArray(rawUid)) {
-    return res
-      .status(400)
-      .json({ message: 'Invalid or missing user ID parameter.' })
+    return res.status(400).json({
+      message: 'Invalid or missing user ID parameter.',
+    })
   }
 
-  let uid
+  let uid: string
+
   try {
     uid = await paramsSchema.validate(decodeURIComponent(rawUid))
   } catch (error) {
-    return res.status(400).json({ message: error.message })
+    return res.status(400).json({
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Invalid or missing user ID parameter.',
+    })
   }
 
-  // ---------------------------------------------------------------------------
-  // GET: Retrieve user profile
-  // ---------------------------------------------------------------------------
+  // GET: Retrieve user profile.
   if (req.method === 'GET') {
     try {
       const user = await prisma.wuphfUser.findUnique({
@@ -413,10 +422,12 @@ export default async function handler(req, res) {
       })
 
       if (!user) {
-        return res
-          .status(404)
-          .json({ message: `No WuphfUser found with the username ${uid}` })
+        return res.status(404).json({
+          message: `No WuphfUser found with the username ${uid}`,
+        })
       }
+
+      let isFollowed: boolean | undefined
 
       if (session?.user?.email) {
         const sender = await prisma.wuphfUser.findUnique({
@@ -424,48 +435,62 @@ export default async function handler(req, res) {
         })
 
         if (sender) {
-          user.isFollowed = user.Followers.some(
+          isFollowed = user.Followers.some(
             (f) => f.followerId === sender.userName,
           )
 
           if (sender.userName !== user.userName) {
-            delete user.Followers
-            delete user.Following
+            const { Followers, Following, ...publicUser } = user
+
+            return res.status(200).json({
+              ...publicUser,
+              isFollowed,
+            })
           }
         }
       } else {
-        delete user.Followers
-        delete user.Following
+        // Do not expose detailed relationship lists to anonymous visitors.
+        const { Followers, Following, ...publicUser } = user
+
+        return res.status(200).json(publicUser)
       }
 
-      return res.status(200).json(user)
+      return res.status(200).json({
+        ...user,
+        ...(isFollowed !== undefined && { isFollowed }),
+      })
     } catch (error) {
       console.error('Error in GET /api/users/[uid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
+      return res.status(500).json({
+        message: 'Internal server error',
+      })
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Authorization check for PATCH and DELETE operations
-  // ---------------------------------------------------------------------------
+  // PATCH and DELETE require authentication.
   if (!session?.user?.email) {
-    return res
-      .status(401)
-      .json({ message: 'Unauthorized: You must be logged in.' })
+    return res.status(401).json({
+      message: 'Unauthorized: You must be logged in.',
+    })
   }
 
   let sessionUser
+
   try {
     sessionUser = await prisma.wuphfUser.findUnique({
       where: { email: session.user.email },
     })
   } catch (error) {
     console.error('Error fetching session user:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 
   if (!sessionUser) {
-    return res.status(404).json({ message: 'Session user profile not found.' })
+    return res.status(404).json({
+      message: 'Session user profile not found.',
+    })
   }
 
   if (sessionUser.userName !== uid) {
@@ -474,12 +499,9 @@ export default async function handler(req, res) {
     })
   }
 
-  // ---------------------------------------------------------------------------
-  // PATCH: Update user profile
-  // ---------------------------------------------------------------------------
+  // PATCH: Update user profile.
   if (req.method === 'PATCH') {
     try {
-      // Validate request body
       const validatedBody = await updateUserSchema.validate(req.body, {
         abortEarly: true,
         stripUnknown: true,
@@ -506,31 +528,34 @@ export default async function handler(req, res) {
 
       return res.status(200).json(updatedUser)
     } catch (error) {
-      // Catch Yup validation errors
       if (error instanceof yup.ValidationError) {
-        return res.status(400).json({ message: error.message })
+        return res.status(400).json({
+          message: error.message,
+        })
       }
 
-      // Catch Prisma errors
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
-          return res.status(404).json({ message: 'No WuphfUser found' })
+          return res.status(404).json({
+            message: 'No WuphfUser found',
+          })
         }
+
         if (error.code === 'P2002') {
-          return res
-            .status(400)
-            .json({ message: 'Username or unique field already in use.' })
+          return res.status(400).json({
+            message: 'Username or unique field already in use.',
+          })
         }
       }
 
       console.error('Error in PATCH /api/users/[uid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
+      return res.status(500).json({
+        message: 'Internal server error',
+      })
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // DELETE: Delete user account by username
-  // ---------------------------------------------------------------------------
+  // DELETE: Permanently delete the authenticated user's root User record.
   if (req.method === 'DELETE') {
     try {
       const deletedUser = await prisma.user.delete({
@@ -543,15 +568,21 @@ export default async function handler(req, res) {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        return res.status(404).json({ message: 'Target user not found' })
+        return res.status(404).json({
+          message: 'Target user not found',
+        })
       }
 
       console.error('Error in DELETE /api/users/[uid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
+      return res.status(500).json({
+        message: 'Internal server error',
+      })
     }
   }
 
-  // Handle unsupported methods
   res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+
+  return res.status(405).json({
+    message: `Method ${req.method} Not Allowed`,
+  })
 }

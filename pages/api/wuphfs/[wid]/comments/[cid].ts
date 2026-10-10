@@ -1,5 +1,7 @@
-import { Prisma, prisma } from '../../../../../lib/prisma'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
+
+import { Prisma, prisma } from '../../../../../lib/prisma'
 import { authOptions } from '../../../../../lib/authOptions'
 
 /**
@@ -220,29 +222,46 @@ import { authOptions } from '../../../../../lib/authOptions'
  *                   type: string
  *                   example: "Internal server error"
  */
-export default async function handler(req, res) {
-  // ---------------------------------------------------------------------------
-  // 1. Parameter Parsing & Validation
-  // ---------------------------------------------------------------------------
-  const { wid, cid } = req.query
-  const postsId = Number(wid)
-  const commentId = Number(cid)
 
-  if (!wid || !cid || isNaN(postsId) || isNaN(commentId)) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // 1. Validate route parameters.
+  const { wid, cid } = req.query
+
+  if (
+    typeof wid !== 'string' ||
+    typeof cid !== 'string' ||
+    !/^\d+$/.test(wid) ||
+    !/^\d+$/.test(cid)
+  ) {
     return res.status(400).json({
       message: "Parameters 'wid' and 'cid' must be valid integers.",
     })
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. GET: Retrieve a specific comment by ID
-  // ---------------------------------------------------------------------------
+  const postsId = Number(wid)
+  const commentId = Number(cid)
+
+  if (
+    !Number.isSafeInteger(postsId) ||
+    !Number.isSafeInteger(commentId) ||
+    postsId <= 0 ||
+    commentId <= 0
+  ) {
+    return res.status(400).json({
+      message: "Parameters 'wid' and 'cid' must be valid integers.",
+    })
+  }
+
+  // 2. GET: Retrieve a specific comment.
   if (req.method === 'GET') {
     try {
       const comment = await prisma.comments.findFirst({
         where: {
           id: commentId,
-          postsId: postsId,
+          postsId,
         },
         include: {
           user: {
@@ -258,57 +277,83 @@ export default async function handler(req, res) {
       })
 
       if (!comment) {
-        return res.status(404).json({ message: 'Comment not found' })
+        return res.status(404).json({
+          message: 'Comment not found',
+        })
       }
 
       return res.status(200).json(comment)
     } catch (error) {
       console.error('Error in GET /api/wuphfs/[wid]/comments/[cid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
+
+      return res.status(500).json({
+        message: 'Internal server error',
+      })
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. Authentication & Ownership Verification for Mutating Operations
-  // ---------------------------------------------------------------------------
+  // Reject unsupported methods before performing authentication or DB work.
+  if (req.method !== 'PATCH' && req.method !== 'DELETE') {
+    res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
+
+    return res.status(405).json({
+      message: `Method ${req.method} Not Allowed`,
+    })
+  }
+
+  // 3. Authenticate mutation requests.
   const session = await getServerSession(req, res, authOptions)
 
   if (!session?.user?.email) {
-    return res
-      .status(401)
-      .json({ message: 'Unauthorized: You must be logged in.' })
+    return res.status(401).json({
+      message: 'Unauthorized: You must be logged in.',
+    })
   }
 
   let sessionUser
+
   try {
     sessionUser = await prisma.wuphfUser.findUnique({
-      where: { email: session.user.email },
+      where: {
+        email: session.user.email,
+      },
     })
   } catch (error) {
     console.error('Error fetching session user:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 
   if (!sessionUser) {
-    return res.status(404).json({ message: 'Session user profile not found.' })
+    return res.status(404).json({
+      message: 'Session user profile not found.',
+    })
   }
 
-  // Ensure target comment exists and verify ownership/post association
+  // 4. Find the comment and verify ownership.
   let existingComment
+
   try {
     existingComment = await prisma.comments.findFirst({
       where: {
         id: commentId,
-        postsId: postsId,
+        postsId,
       },
     })
   } catch (error) {
     console.error('Error fetching target comment:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 
   if (!existingComment) {
-    return res.status(404).json({ message: 'Comment not found' })
+    return res.status(404).json({
+      message: 'Comment not found',
+    })
   }
 
   if (existingComment.userId !== sessionUser.userName) {
@@ -317,17 +362,11 @@ export default async function handler(req, res) {
     })
   }
 
-  // ---------------------------------------------------------------------------
-  // 4. PATCH: Update comment body
-  // ---------------------------------------------------------------------------
+  // 5. PATCH: Update comment body.
   if (req.method === 'PATCH') {
-    const { commentBody } = req.body || {}
+    const commentBody: unknown = req.body?.commentBody
 
-    if (
-      !commentBody ||
-      typeof commentBody !== 'string' ||
-      !commentBody.trim()
-    ) {
+    if (typeof commentBody !== 'string' || !commentBody.trim()) {
       return res.status(400).json({
         message: "Field 'commentBody' must be a non-empty string.",
       })
@@ -335,7 +374,9 @@ export default async function handler(req, res) {
 
     try {
       const updatedComment = await prisma.comments.update({
-        where: { id: commentId },
+        where: {
+          id: commentId,
+        },
         data: {
           commentBody: commentBody.trim(),
         },
@@ -347,38 +388,42 @@ export default async function handler(req, res) {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        return res.status(404).json({ message: 'Comment not found' })
+        return res.status(404).json({
+          message: 'Comment not found',
+        })
       }
 
       console.error('Error in PATCH /api/wuphfs/[wid]/comments/[cid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
-    }
-  }
 
-  // ---------------------------------------------------------------------------
-  // 5. DELETE: Delete a comment
-  // ---------------------------------------------------------------------------
-  if (req.method === 'DELETE') {
-    try {
-      const deletedComment = await prisma.comments.delete({
-        where: { id: commentId },
+      return res.status(500).json({
+        message: 'Internal server error',
       })
-
-      return res.status(200).json(deletedComment)
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        return res.status(404).json({ message: 'Comment not found' })
-      }
-
-      console.error('Error in DELETE /api/wuphfs/[wid]/comments/[cid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
-  // Handle unsupported methods
-  res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+  // 6. DELETE: Delete the comment.
+  try {
+    const deletedComment = await prisma.comments.delete({
+      where: {
+        id: commentId,
+      },
+    })
+
+    return res.status(200).json(deletedComment)
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return res.status(404).json({
+        message: 'Comment not found',
+      })
+    }
+
+    console.error('Error in DELETE /api/wuphfs/[wid]/comments/[cid]:', error)
+
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
+  }
 }

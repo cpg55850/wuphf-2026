@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
 import { authOptions } from '../../../../lib/authOptions'
@@ -188,91 +189,109 @@ import { Prisma, prisma } from '../../../../lib/prisma'
  *           format: date-time
  *           example: "2026-10-08T04:49:25.000Z"
  */
-export default async function handler(req, res) {
-  // ---------------------------------------------------------------------------
-  // 1. Parameter Validation
-  // ---------------------------------------------------------------------------
-  const { wid } = req.query
-  const wuphfId = Number(wid)
 
-  if (!wid || isNaN(wuphfId)) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // 1. Validate the Wuphf ID.
+  const { wid } = req.query
+
+  if (typeof wid !== 'string' || !/^\d+$/.test(wid)) {
     return res.status(400).json({
-      message: 'Parameter \'wid\' must be a valid integer.',
+      message: "Parameter 'wid' must be a valid integer.",
     })
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. GET: Retrieve likes for a Wuphf
-  // ---------------------------------------------------------------------------
+  const wuphfId = Number(wid)
+
+  if (!Number.isSafeInteger(wuphfId)) {
+    return res.status(400).json({
+      message: "Parameter 'wid' must be a valid integer.",
+    })
+  }
+
+  // 2. GET: Retrieve likes for a Wuphf.
   if (req.method === 'GET') {
     try {
-      // Check if target Wuphf post exists
       const existingWuphf = await prisma.wuphf.findUnique({
         where: { id: wuphfId },
         select: { id: true },
       })
 
       if (!existingWuphf) {
-        return res.status(404).json({ message: 'Wuphf post not found' })
+        return res.status(404).json({
+          message: 'Wuphf post not found',
+        })
       }
 
       const likes = await prisma.likes.findMany({
-        where: {
-          wuphfId: wuphfId,
-        },
+        where: { wuphfId },
       })
 
       return res.status(200).json(likes)
     } catch (error) {
       console.error('Error in GET /api/wuphfs/[wid]/likes:', error)
-      return res.status(500).json({ message: 'Internal server error' })
+      return res.status(500).json({
+        message: 'Internal server error',
+      })
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. Authorization Guard for Mutating Operations (POST & DELETE)
-  // ---------------------------------------------------------------------------
+  // Only POST and DELETE are supported beyond GET.
+  if (req.method !== 'POST' && req.method !== 'DELETE') {
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE'])
+    return res.status(405).json({
+      message: `Method ${req.method} Not Allowed`,
+    })
+  }
+
+  // 3. Authenticate mutating requests.
   const session = await getServerSession(req, res, authOptions)
 
   if (!session?.user?.email) {
-    return res
-      .status(401)
-      .json({ message: 'Unauthorized: Active session required.' })
+    return res.status(401).json({
+      message: 'Unauthorized: Active session required.',
+    })
   }
 
   let sessionUser
+
   try {
     sessionUser = await prisma.wuphfUser.findUnique({
       where: { email: session.user.email },
     })
   } catch (error) {
     console.error('Error fetching session user:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
   }
 
   if (!sessionUser) {
-    return res.status(404).json({ message: 'Session user profile not found.' })
+    return res.status(404).json({
+      message: 'Session user profile not found.',
+    })
   }
 
-  // ---------------------------------------------------------------------------
-  // 4. POST: Like a Wuphf
-  // ---------------------------------------------------------------------------
+  // 4. POST: Like a Wuphf.
   if (req.method === 'POST') {
     try {
-      // Check if target Wuphf exists (#error check)
       const targetWuphf = await prisma.wuphf.findUnique({
         where: { id: wuphfId },
         select: { id: true },
       })
 
       if (!targetWuphf) {
-        return res.status(404).json({ message: 'Wuphf post not found' })
+        return res.status(404).json({
+          message: 'Wuphf post not found',
+        })
       }
 
       const like = await prisma.likes.create({
         data: {
           userId: sessionUser.userName,
-          wuphfId: wuphfId,
+          wuphfId,
         },
       })
 
@@ -282,47 +301,43 @@ export default async function handler(req, res) {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        return res
-          .status(400)
-          .json({ message: 'You have already liked this Wuphf.' })
+        return res.status(400).json({
+          message: 'You have already liked this Wuphf.',
+        })
       }
 
       console.error('Error in POST /api/wuphfs/[wid]/likes:', error)
-      return res.status(500).json({ message: 'Internal server error' })
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 5. DELETE: Unlike a Wuphf
-  // ---------------------------------------------------------------------------
-  if (req.method === 'DELETE') {
-    try {
-      const like = await prisma.likes.delete({
-        where: {
-          userId_wuphfId: {
-            userId: sessionUser.userName,
-            wuphfId: wuphfId,
-          },
-        },
+      return res.status(500).json({
+        message: 'Internal server error',
       })
-
-      return res.status(200).json(like)
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        return res
-          .status(404)
-          .json({ message: 'Like relationship does not exist.' })
-      }
-
-      console.error('Error in DELETE /api/wuphfs/[wid]/likes:', error)
-      return res.status(500).json({ message: 'Internal server error' })
     }
   }
 
-  // Handle unsupported HTTP methods
-  res.setHeader('Allow', ['GET', 'POST', 'DELETE'])
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+  // 5. DELETE: Unlike a Wuphf.
+  try {
+    const like = await prisma.likes.delete({
+      where: {
+        userId_wuphfId: {
+          userId: sessionUser.userName,
+          wuphfId,
+        },
+      },
+    })
+
+    return res.status(200).json(like)
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return res.status(404).json({
+        message: 'Like relationship does not exist.',
+      })
+    }
+
+    console.error('Error in DELETE /api/wuphfs/[wid]/likes:', error)
+    return res.status(500).json({
+      message: 'Internal server error',
+    })
+  }
 }

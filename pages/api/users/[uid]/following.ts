@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
 import { authOptions } from '../../../../lib/authOptions'
@@ -156,7 +157,11 @@ import { Prisma, prisma } from '../../../../lib/prisma'
  *                 error:
  *                   type: object
  */
-export default async function handler(req, res) {
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const session = await getServerSession(req, res, authOptions)
   const rawUid = req.query.uid
 
@@ -166,16 +171,22 @@ export default async function handler(req, res) {
       .json({ message: 'Invalid or missing user ID parameter.' })
   }
 
-  const uid = decodeURIComponent(rawUid)
+  let uid: string
 
-  // ---------------------------------------------------------------------------
+  try {
+    uid = decodeURIComponent(rawUid)
+  } catch {
+    return res
+      .status(400)
+      .json({ message: 'Invalid or missing user ID parameter.' })
+  }
+
   // GET: Retrieve following list
-  // ---------------------------------------------------------------------------
   if (req.method === 'GET') {
     try {
       let targetUsername = uid
 
-      // If session exists, resolve username from the logged-in user's email
+      // If a session exists, resolve the logged-in user's username.
       if (session?.user?.email) {
         const wuphfUser = await prisma.wuphfUser.findUnique({
           where: { email: session.user.email },
@@ -186,6 +197,7 @@ export default async function handler(req, res) {
             message: `No WuphfUser found with the email ${session.user.email}`,
           })
         }
+
         targetUsername = wuphfUser.userName
       }
 
@@ -201,18 +213,17 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Helper: Resolve current operating user for POST / DELETE
-  // ---------------------------------------------------------------------------
+  // Resolve the current operating user for POST and DELETE.
   const userEmail = session?.user?.email || req.body?.email
 
-  if (!userEmail) {
+  if (!userEmail || typeof userEmail !== 'string') {
     return res
       .status(401)
       .json({ message: 'Unauthorized: Session or valid email required.' })
   }
 
   let currentUser
+
   try {
     currentUser = await prisma.wuphfUser.findUnique({
       where: { email: userEmail },
@@ -230,9 +241,7 @@ export default async function handler(req, res) {
 
   const currentUsername = currentUser.userName
 
-  // ---------------------------------------------------------------------------
   // POST: Follow a user
-  // ---------------------------------------------------------------------------
   if (req.method === 'POST') {
     if (uid === currentUsername) {
       return res.status(400).json({ message: 'You cannot follow yourself' })
@@ -270,9 +279,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // DELETE: Unfollow a user
-  // ---------------------------------------------------------------------------
   if (req.method === 'DELETE') {
     try {
       const userToUnfollow = await prisma.wuphfUser.findUnique({

@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
 import { authOptions } from '../../../../lib/authOptions'
@@ -246,22 +247,28 @@ import { Prisma, prisma } from '../../../../lib/prisma'
  *               type: integer
  *               example: 4
  */
-export default async function handler(req, res) {
-  // ---------------------------------------------------------------------------
-  // 1. Parameter Validation
-  // ---------------------------------------------------------------------------
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  // 1. Parameter validation
   const { wid } = req.query
-  const wuphfId = Number(wid)
 
-  if (!wid || isNaN(wuphfId)) {
+  if (typeof wid !== 'string' || !wid.trim() || !/^\d+$/.test(wid)) {
     return res.status(400).json({
-      message: 'Parameter \'wid\' must be a valid integer.',
+      message: "Parameter 'wid' must be a valid integer.",
     })
   }
 
-  // ---------------------------------------------------------------------------
+  const wuphfId = Number(wid)
+
+  if (!Number.isSafeInteger(wuphfId)) {
+    return res.status(400).json({
+      message: "Parameter 'wid' must be a valid integer.",
+    })
+  }
+
   // 2. GET: Retrieve a specific Wuphf by ID
-  // ---------------------------------------------------------------------------
   if (req.method === 'GET') {
     try {
       const wuphf = await prisma.wuphf.findUnique({
@@ -292,9 +299,12 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. Authorization Check for Mutating Operations (PATCH & DELETE)
-  // ---------------------------------------------------------------------------
+  // 3. Authorization for PATCH and DELETE
+  if (req.method !== 'PATCH' && req.method !== 'DELETE') {
+    res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
+    return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+  }
+
   const session = await getServerSession(req, res, authOptions)
 
   if (!session?.user?.email) {
@@ -304,6 +314,7 @@ export default async function handler(req, res) {
   }
 
   let sessionUser
+
   try {
     sessionUser = await prisma.wuphfUser.findUnique({
       where: { email: session.user.email },
@@ -317,15 +328,23 @@ export default async function handler(req, res) {
     return res.status(404).json({ message: 'Session user profile not found.' })
   }
 
-  // ---------------------------------------------------------------------------
   // 4. PATCH: Update an existing Wuphf
-  // ---------------------------------------------------------------------------
   if (req.method === 'PATCH') {
-    const { postBody, pictureUrl } = req.body || {}
+    const { postBody, pictureUrl } = req.body ?? {}
 
-    if (!postBody || typeof postBody !== 'string' || !postBody.trim()) {
+    if (typeof postBody !== 'string' || !postBody.trim()) {
       return res.status(400).json({
         message: 'Post cannot contain only white space.',
+      })
+    }
+
+    if (
+      pictureUrl !== undefined &&
+      pictureUrl !== null &&
+      typeof pictureUrl !== 'string'
+    ) {
+      return res.status(400).json({
+        message: 'pictureUrl must be a string or null.',
       })
     }
 
@@ -363,49 +382,40 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // 5. DELETE: Delete a Wuphf
-  // ---------------------------------------------------------------------------
-  if (req.method === 'DELETE') {
-    try {
-      // Look up target Wuphf to verify ownership
-      const targetWuphf = await prisma.wuphf.findUnique({
-        where: { id: wuphfId },
-      })
+  try {
+    const targetWuphf = await prisma.wuphf.findUnique({
+      where: { id: wuphfId },
+    })
 
-      if (!targetWuphf) {
-        return res
-          .status(404)
-          .json({ message: 'The Wuphf to delete was not found' })
-      }
-
-      if (targetWuphf.userId !== sessionUser.userName) {
-        return res.status(403).json({
-          message: 'Forbidden: You can only delete your own Wuphfs.',
-        })
-      }
-
-      const deletedWuphf = await prisma.wuphf.delete({
-        where: { id: wuphfId },
-      })
-
-      return res.status(200).json(deletedWuphf)
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        return res
-          .status(404)
-          .json({ message: 'The Wuphf to delete was not found' })
-      }
-
-      console.error('Error in DELETE /api/wuphfs/[wid]:', error)
-      return res.status(500).json({ message: 'Internal server error' })
+    if (!targetWuphf) {
+      return res
+        .status(404)
+        .json({ message: 'The Wuphf to delete was not found' })
     }
-  }
 
-  // Handle unsupported HTTP methods
-  res.setHeader('Allow', ['GET', 'PATCH', 'DELETE'])
-  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+    if (targetWuphf.userId !== sessionUser.userName) {
+      return res.status(403).json({
+        message: 'Forbidden: You can only delete your own Wuphfs.',
+      })
+    }
+
+    const deletedWuphf = await prisma.wuphf.delete({
+      where: { id: wuphfId },
+    })
+
+    return res.status(200).json(deletedWuphf)
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return res
+        .status(404)
+        .json({ message: 'The Wuphf to delete was not found' })
+    }
+
+    console.error('Error in DELETE /api/wuphfs/[wid]:', error)
+    return res.status(500).json({ message: 'Internal server error' })
+  }
 }
