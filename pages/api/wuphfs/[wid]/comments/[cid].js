@@ -1,4 +1,6 @@
 import { Prisma, prisma } from '../../../../../lib/prisma'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '../../../../../lib/authOptions'
 
 /**
  * @openapi
@@ -228,7 +230,7 @@ export default async function handler(req, res) {
 
   if (!wid || !cid || isNaN(postsId) || isNaN(commentId)) {
     return res.status(400).json({
-      message: 'Parameters \'wid\' and \'cid\' must be valid integers.',
+      message: "Parameters 'wid' and 'cid' must be valid integers.",
     })
   }
 
@@ -269,7 +271,7 @@ export default async function handler(req, res) {
   // ---------------------------------------------------------------------------
   // 3. Authentication & Ownership Verification for Mutating Operations
   // ---------------------------------------------------------------------------
-  const session = await getSession({ req })
+  const session = await getServerSession(req, res, authOptions)
 
   if (!session?.user?.email) {
     return res
@@ -327,7 +329,7 @@ export default async function handler(req, res) {
       !commentBody.trim()
     ) {
       return res.status(400).json({
-        message: 'Field \'commentBody\' must be a non-empty string.',
+        message: "Field 'commentBody' must be a non-empty string.",
       })
     }
 
