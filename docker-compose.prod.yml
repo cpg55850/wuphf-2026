@@ -1,5 +1,6 @@
 services:
   app:
+    build: .
     image: charliechip95/wuphf:v1.0
     command: >
       sh -c "
