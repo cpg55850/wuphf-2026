@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@theme {
+  --color-header-light: orange;
+  --color-header-dark: #2b2b0a;
+
+  --color-footer: cyan;
+
+  --color-wuphf-input: #e3f6fb;
+
+  /* Mapped theme tokens */
+  --color-body: var(--body-color);
+  --color-border: var(--border-color);
+  --color-highlight: var(--highlight-color);
+  --color-highlight-pressed: var(--highlight-pressed-color);
+
+  --color-app-text: var(--text-color);
+  --color-subtext: var(--subtext-color);
+
+  --color-brand-primary: #1f9bef;
+  --color-brand-secondary: #202e4a;
+
+  --color-like: #03b97c;
+  --color-like-hover: var(--like-hover);
+  --color-like-active: var(--like-active);
+
+  --color-comment: magenta;
+  --color-comment-hover: var(--comment-hover);
+  --color-comment-active: var(--comment-active);
+}
+
+/* Define the light theme values by default */
+:root {
+  --body-color: #fff;
+  --border-color: #cccccc;
+  --highlight-color: #f2f2f2;
+  --highlight-pressed-color: #e6e6e6;
+  --text-color: #000;
+  --subtext-color: #808080;
+  --like-hover: #35c796;
+  --like-active: #81dcbd;
+  --comment-hover: #ff33ff;
+  --comment-active: #ff80ff;
+}
+
+/* Define the dark theme values */
+.dark {
+  --body-color: #15202b;
+  --border-color: #3f566e;
+  --highlight-color: #202c38;
+  --highlight-pressed-color: #2b3b4b;
+  --text-color: #fff;
+  --subtext-color: #8aa2b9;
+  --like-hover: #35c796;
+  --like-active: #81dcbd;
+  --comment-hover: #ff33ff;
+  --comment-active: #ff80ff;
+}

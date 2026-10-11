@@ -11,7 +11,7 @@ import { darkTheme } from '../assets/themes/darkTheme'
 import { lavaTheme } from '../assets/themes/lavaTheme'
 import { lightTheme } from '../assets/themes/lightTheme'
 import FormInput from '../components/forms/FormInput'
-import SelectInput, { Wrapper } from '../components/forms/SelectInput'
+import SelectInput from '../components/forms/SelectInput'
 import TextArea from '../components/forms/TextArea'
 import Avatar from '../components/general/Avatar'
 import Button from '../components/general/Button'
@@ -135,37 +135,49 @@ function AccountSettings() {
   }
 
   return (
-    <AccSetLayout>
+    <div className="flex flex-row gap-[30px] max-w-[686px] mx-auto px-4">
       <Head>
         <title>Settings | Wuphf</title>
       </Head>
       <Sidebar />
-      <MainContent>
+      <div className="flex flex-col gap-5 w-full">
+        {/* Profile Settings Section */}
         <div>
-          <HeaderButtonWrapper>
-            <HeaderText>Profile Settings</HeaderText>
-            <EditBtnWrapper>
+          <div className="flex flex-row pt-5 ml-0">
+            <h2 className="text-2xl font-bold border-none text-left w-full text-app-text">
+              Profile Settings
+            </h2>
+            <div className="text-[1.3rem]">
               <Button
                 variant="secondary"
                 onClick={handleEditProfileSettingsButtonClick}
               >
                 {editProfileSettingsEnabled ? 'Save' : 'Edit'}
               </Button>
-            </EditBtnWrapper>
-          </HeaderButtonWrapper>
+            </div>
+          </div>
 
-          <Subheading id="avatar">Avatar:</Subheading>
-          <TextBtnSpace>
+          <div
+            id="avatar"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Avatar:
+          </div>
+          <div className="flex gap-[30px] items-center">
             <SelectInput
               register={register}
               id="avatar"
               label=""
               enabled={editProfileSettingsEnabled}
             >
-              {avatars.map((avatar) => (
-                <Option key={avatar.key} value={avatar.url}>
+              {avatars.map((avatar: any) => (
+                <option
+                  key={avatar.key}
+                  value={avatar.url}
+                  className="text-black"
+                >
                   {avatar.name}
-                </Option>
+                </option>
               ))}
             </SelectInput>
             <Avatar
@@ -173,9 +185,14 @@ function AccountSettings() {
               username={wuphfUser?.userName}
               profileImageUrl={watch('avatar') || 'animal_svgs/dog_nau7in.svg'}
             />
-          </TextBtnSpace>
+          </div>
 
-          <Subheading id="username">Username:</Subheading>
+          <div
+            id="username"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Username:
+          </div>
           <FormInput
             id="username"
             label=""
@@ -184,7 +201,12 @@ function AccountSettings() {
             enabled={editProfileSettingsEnabled}
           />
 
-          <Subheading id="biography">Biography:</Subheading>
+          <div
+            id="biography"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Biography:
+          </div>
           <TextArea
             register={register}
             id="biography_textarea"
@@ -193,111 +215,103 @@ function AccountSettings() {
           />
         </div>
 
+        {/* Account Settings Section */}
         <div>
-          <HeaderText>Account Settings</HeaderText>
-          <Subheading id="linked_account">Linked Accounts:</Subheading>
+          <h2 className="text-2xl font-bold border-none text-left w-full text-app-text pt-5">
+            Account Settings
+          </h2>
+          <div
+            id="linked_account"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Linked Accounts:
+          </div>
           <GoogleLogo />
-          <Subheading id="delete_account">Delete Account:</Subheading>
+          <div
+            id="delete_account"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Delete Account:
+          </div>
           <Paragraph>
             Permanently remove all account data, Wuphs, and likes. This cannot
             be undone.
           </Paragraph>
-          <DABtnWrapper>
+          <div className="text-[1.3rem] mt-4">
             <Button variant="secondary" onClick={handleDeleteButtonClick}>
               Delete Account
             </Button>
-          </DABtnWrapper>
+          </div>
         </div>
 
+        {/* Visual Settings Section */}
         <div>
-          <HeaderButtonWrapper>
-            <HeaderText>Visual Settings</HeaderText>
-            <EditBtnWrapper>
+          <div className="flex flex-row pt-5 ml-0">
+            <h2 className="text-2xl font-bold border-none text-left w-full text-app-text">
+              Visual Settings
+            </h2>
+            <div className="text-[1.3rem]">
               <Button
                 variant="secondary"
                 onClick={handleEditVisualSettingsButtonClick}
               >
                 {editVisualSettingsEnabled ? 'Save' : 'Edit'}
               </Button>
-            </EditBtnWrapper>
-          </HeaderButtonWrapper>
+            </div>
+          </div>
 
-          <Subheading id="site_theme">Site Theme:</Subheading>
-          <Wrapper>
+          <div
+            id="site_theme"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Site Theme:
+          </div>
+          <div className="mb-4 w-full">
             <select
               id="site_theme"
               onChange={handleThemeChange}
               value={selectedThemeValue}
               disabled={!editVisualSettingsEnabled}
+              className="mt-2 w-full cursor-pointer appearance-none rounded border border-border bg-body p-2 text-inherit text-app-text outline-none text-base disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Option value="light">Light</Option>
-              <Option value="lava">Lava</Option>
-              <Option value="dark">Dark</Option>
+              <option value="light" className="text-black">
+                Light
+              </option>
+              <option value="lava" className="text-black">
+                Lava
+              </option>
+              <option value="dark" className="text-black">
+                Dark
+              </option>
             </select>
-          </Wrapper>
+          </div>
 
-          <Subheading id="text_size">Text Size:</Subheading>
+          <div
+            id="text_size"
+            className="mt-8 mb-4 font-bold text-base text-app-text"
+          >
+            Text Size:
+          </div>
           <SelectInput
             register={register}
             id="font_size"
             label=""
             enabled={editVisualSettingsEnabled}
           >
-            <Option value="small">Small</Option>
-            <Option value="medium">Medium</Option>
-            <Option value="large">Large</Option>
+            <option value="small" className="text-black">
+              Small
+            </option>
+            <option value="medium" className="text-black">
+              Medium
+            </option>
+            <option value="large" className="text-black">
+              Large
+            </option>
           </SelectInput>
         </div>
-      </MainContent>
-    </AccSetLayout>
+      </div>
+    </div>
   )
 }
 
 export default withAuth(AccountSettings)
-
-const MainContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`
-const TextBtnSpace = styled.div`
-  display: flex;
-  gap: 30px;
-`
-const AccSetLayout = styled.div`
-  display: flex;
-  flex-direction: row;
-  grid-gap: 30px;
-  max-width: 686px;
-  margin: 0 auto;
-  padding: 0 1rem;
-`
-const Subheading = styled.div`
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  font-weight: bold;
-  font-size: 1rem;
-`
-const HeaderText = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  border: none;
-  text-align: left;
-  width: 100%;
-`
-const HeaderButtonWrapper = styled.div`
-  margin-left: 0em;
-  display: flex;
-  flex-direction: row;
-  padding: 20px 0 0 0;
-`
-const EditBtnWrapper = styled.div`
-  font-size: 1.3rem;
-`
-const DABtnWrapper = styled.div`
-  font-size: 1.3rem;
-  margin-top: 1rem;
-`
-const Option = styled.option`
-  color: black;
-`

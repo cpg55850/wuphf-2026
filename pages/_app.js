@@ -1,3 +1,4 @@
+import '../styles/globals.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import { SessionProvider } from 'next-auth/react'
 
@@ -9,19 +10,19 @@ import { CustomThemeProvider } from '../hooks/useCustomTheme'
 import { WuphfUserContextProvider } from '../hooks/WuphfUserContext'
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }) {
-	return (
-		<SessionProvider session={session}>
-			<AvatarContextProvider>
-				<WuphfUserContextProvider>
-					<CustomThemeProvider>
-						<Layout>
-							<Component {...pageProps} />
-						</Layout>
-					</CustomThemeProvider>
-				</WuphfUserContextProvider>
-			</AvatarContextProvider>
-		</SessionProvider>
-	)
+  return (
+    <SessionProvider session={session}>
+      <AvatarContextProvider>
+        <WuphfUserContextProvider>
+          <CustomThemeProvider>
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+          </CustomThemeProvider>
+        </WuphfUserContextProvider>
+      </AvatarContextProvider>
+    </SessionProvider>
+  )
 }
 
 export default MyApp
