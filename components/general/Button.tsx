@@ -1,0 +1,29 @@
+import React, { ButtonHTMLAttributes } from 'react'
+
+export type ButtonVariant = 'primary' | 'secondary' | 'default'
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant
+}
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: 'bg-primary text-white hover:bg-primary/90',
+  secondary: 'bg-border text-text hover:bg-highlightPressed',
+  default: 'bg-body text-text border border-border hover:bg-highlight',
+}
+
+export default function Button({
+  children,
+  variant = 'default',
+  className = '',
+  ...props
+}: ButtonProps) {
+  return (
+    <button
+      {...props}
+      className={`font-semibold whitespace-nowrap shrink-0 py-2 px-4 overflow-hidden rounded-full shadow-md cursor-pointer transition-all duration-200 ease-out border-none hover:brightness-95 active:brightness-90 disabled:bg-gray-400 disabled:cursor-not-allowed ${variantClasses[variant] || variantClasses.default} ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
