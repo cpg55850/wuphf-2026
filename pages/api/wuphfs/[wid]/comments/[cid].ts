@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
-import { Prisma, prisma } from '../../../../../lib/prisma'
 import { authOptions } from '../../../../../lib/authOptions'
+import { Prisma, prisma } from '../../../../../lib/prisma'
 
 /**
  * @openapi
@@ -237,7 +237,7 @@ export default async function handler(
     !/^\d+$/.test(cid)
   ) {
     return res.status(400).json({
-      message: "Parameters 'wid' and 'cid' must be valid integers.",
+      message: 'Parameters \'wid\' and \'cid\' must be valid integers.',
     })
   }
 
@@ -251,7 +251,7 @@ export default async function handler(
     commentId <= 0
   ) {
     return res.status(400).json({
-      message: "Parameters 'wid' and 'cid' must be valid integers.",
+      message: 'Parameters \'wid\' and \'cid\' must be valid integers.',
     })
   }
 
@@ -368,7 +368,7 @@ export default async function handler(
 
     if (typeof commentBody !== 'string' || !commentBody.trim()) {
       return res.status(400).json({
-        message: "Field 'commentBody' must be a non-empty string.",
+        message: 'Field \'commentBody\' must be a non-empty string.',
       })
     }
 

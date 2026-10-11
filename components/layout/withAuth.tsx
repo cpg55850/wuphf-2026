@@ -1,10 +1,11 @@
-import React, { ComponentType, ComponentProps } from 'react'
+import React, { ComponentType } from 'react'
+
 import { useSession } from 'next-auth/react'
 
+import Loading from './Loading'
 import { useWuphfUser } from '../../hooks/WuphfUserContext'
 import Welcome from '../home/Welcome'
 import RegistrationForm from '../registration/RegistrationForm'
-import Loading from './Loading'
 
 export interface WithAuthProps {
   session?: ReturnType<typeof useSession>['data']

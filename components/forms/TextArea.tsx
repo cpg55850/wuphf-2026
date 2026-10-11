@@ -1,5 +1,11 @@
 import React from 'react'
-import { FieldError, FieldValues, Path, UseFormRegister } from 'react-hook-form'
+
+import type {
+  FieldError,
+  FieldValues,
+  Path,
+  UseFormRegister,
+} from 'react-hook-form'
 
 import Error from './Error'
 import Label from './Label'

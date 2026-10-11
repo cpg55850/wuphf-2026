@@ -1,8 +1,10 @@
 // pages/doc.tsx
 import { ComponentType } from 'react'
+
+import type { InferGetStaticPropsType, GetStaticProps } from 'next'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
-import type { InferGetStaticPropsType, GetStaticProps } from 'next'
+
 import { getApiDocs } from '../swagger'
 
 // Explicitly type the dynamic import so TypeScript knows it accepts a `spec` prop

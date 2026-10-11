@@ -1,4 +1,5 @@
 import React, { MouseEvent } from 'react'
+
 import Link from 'next/link'
 
 export interface MobileLinkProps {

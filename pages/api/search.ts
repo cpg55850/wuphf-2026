@@ -64,7 +64,7 @@ export default async function handler(
 
   if (typeof rawQuery !== 'string' || !rawQuery.trim()) {
     return res.status(400).json({
-      message: "Query parameter 'userName' must be a non-empty string.",
+      message: 'Query parameter \'userName\' must be a non-empty string.',
     })
   }
 

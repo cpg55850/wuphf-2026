@@ -1,6 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
 import { v2 as cloudinary } from 'cloudinary'
 import formidable, { type File } from 'formidable'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 
 import { authOptions } from '../../lib/authOptions'

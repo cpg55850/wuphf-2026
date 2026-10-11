@@ -1,6 +1,7 @@
 // components/forms/FormInput.tsx
 import React from 'react'
-import {
+
+import type {
   FieldError,
   FieldErrorsImpl,
   FieldValues,

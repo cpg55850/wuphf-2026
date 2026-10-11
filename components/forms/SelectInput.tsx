@@ -1,5 +1,6 @@
 import React from 'react'
-import { UseFormRegister, FieldValues, Path } from 'react-hook-form'
+
+import type { UseFormRegister, FieldValues, Path } from 'react-hook-form'
 
 import Label from './Label'
 

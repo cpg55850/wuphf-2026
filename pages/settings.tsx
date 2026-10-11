@@ -5,7 +5,6 @@ import Head from 'next/head'
 import { signOut } from 'next-auth/react'
 import propTypes from 'prop-types'
 import { useForm } from 'react-hook-form'
-import styled from 'styled-components'
 
 import { darkTheme } from '../assets/themes/darkTheme'
 import { lavaTheme } from '../assets/themes/lavaTheme'

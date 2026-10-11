@@ -180,7 +180,7 @@ export default async function handler(
 
   if (typeof wid !== 'string' || !/^\d+$/.test(wid)) {
     return res.status(400).json({
-      message: "Parameter 'wid' must be a valid integer.",
+      message: 'Parameter \'wid\' must be a valid integer.',
     })
   }
 
@@ -188,7 +188,7 @@ export default async function handler(
 
   if (!Number.isSafeInteger(postsId) || postsId <= 0) {
     return res.status(400).json({
-      message: "Parameter 'wid' must be a valid integer.",
+      message: 'Parameter \'wid\' must be a valid integer.',
     })
   }
 

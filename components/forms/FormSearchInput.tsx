@@ -1,7 +1,13 @@
 import React from 'react'
+
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { FieldError, FieldValues, Path, UseFormRegister } from 'react-hook-form'
+import type {
+  FieldError,
+  FieldValues,
+  Path,
+  UseFormRegister,
+} from 'react-hook-form'
 
 import Error from './Error'
 import Label from './Label'

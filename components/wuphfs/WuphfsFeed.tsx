@@ -1,6 +1,7 @@
 import React, { useRef, useCallback } from 'react'
-import Wuphfs from './Wuphfs'
+
 import { WuphfProps } from './Wuphf'
+import Wuphfs from './Wuphfs'
 
 export interface WuphfsFeedProps {
   wuphfs: WuphfProps[]

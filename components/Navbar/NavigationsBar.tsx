@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
+
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { signOut } from 'next-auth/react'
 
+import NavigationLink from './DesktopLink'
+import Links from './Links'
+import MobileLink from './MobileLink'
+import WuphfLogo from './WuphfLogo'
 import { useSearch } from '../../hooks/useSearch'
 import { useWuphfUser } from '../../hooks/WuphfUserContext'
 import FormSearchInput from '../forms/FormSearchInput'
 import Avatar from '../general/Avatar'
 import Button from '../general/Button'
-import NavigationLink from './DesktopLink'
-import Links from './Links'
-import MobileLink from './MobileLink'
-import WuphfLogo from './WuphfLogo'
 
 export default function NavigationBar(): React.ReactElement {
   const router = useRouter()
