@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
+
 import axios from 'axios'
 import Head from 'next/head'
+
 import withAuth from '../components/layout/withAuth'
 import Container from '../components/styledComponents/Container'
 import WuphfInput from '../components/timeline/WuphfInput'
