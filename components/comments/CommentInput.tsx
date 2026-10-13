@@ -56,7 +56,7 @@ export default function CommentInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-4 p-4 text-text bg-highlight border-x-[1.5px] border-b-[1.5px] border-border"
+      className="flex items-center gap-4 p-4 text-text bg-highlight border-solid border-b-[1.5px] border-border"
     >
       <div className="relative shrink-0 [&>span]:w-[50px] [&>span]:h-[50px]">
         {wuphfUser?.userName && (
@@ -71,7 +71,7 @@ export default function CommentInput({
       <textarea
         value={comment}
         onChange={handleChange}
-        placeholder="What do you want to say?"
+        // placeholder="What do you want to say?"
         rows={1}
         className="font-inherit text-inherit bg-body w-full p-2 rounded resize-none outline-none border-[1.5px] border-border focus:outline-none"
       />

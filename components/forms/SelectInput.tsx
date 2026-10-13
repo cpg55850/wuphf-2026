@@ -47,7 +47,7 @@ const SelectInput = React.forwardRef<HTMLSelectElement, SelectInputProps<any>>(
             onBlur?.(e)
           }}
           name={registered.name}
-          className="mt-2 w-full cursor-pointer appearance-none rounded border border-border bg-body p-2 text-inherit text-app-text outline-none text-base disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 w-full cursor-pointer appearance-none rounded-xl border border-border border-solid bg-body p-2 text-inherit text-app-text outline-none text-base disabled:cursor-not-allowed disabled:opacity-50"
         >
           {children}
         </select>

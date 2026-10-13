@@ -43,7 +43,7 @@ function FormInput<TFieldValues extends FieldValues = FieldValues>({
         disabled={!enabled}
         {...register(id)}
         {...props}
-        className={`mt-2 block w-full rounded bg-body p-2 text-inherit text-app-text outline-none text-base transition-colors disabled:cursor-not-allowed disabled:opacity-50 border ${
+        className={`mt-2 block w-full rounded-xl bg-body p-2 text-inherit text-app-text outline-none text-base transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-solid ${
           error ? 'border-red-500' : 'border-border focus:border-primary'
         }`}
       />

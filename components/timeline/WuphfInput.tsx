@@ -59,8 +59,8 @@ export default function WuphfInput({ addWuphf }: WuphfInputProps) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={`w-full p-6 rounded-[15px] border-[1.5px] ${
-        errors.post ? 'border-red-500' : 'border-border'
+      className={`w-full p-6 shadow-md rounded-[15px] border-border border-[.5px] border-solid ${
+        errors.post ? 'border-red-500 border-solid border-[1.5px] ' : ''
       }`}
     >
       <textarea

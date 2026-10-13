@@ -31,11 +31,11 @@ function FormSearchInput<TFieldValues extends FieldValues = FieldValues>({
   ...props
 }: FormSearchInputProps<TFieldValues>) {
   return (
-    <div className="mb-4 w-full">
+    <div className="w-full">
       {label && <Label htmlFor={id}>{label}</Label>}
       <form
         autoComplete="off"
-        className={`flex items-center rounded-full bg-body px-2.5 transition-colors border-[1.5px] ${
+        className={`flex items-center rounded-full bg-body px-2.5 transition-colors border-[1.5px] border-solid ${
           error ? 'border-red-500' : 'border-border focus-within:border-primary'
         }`}
       >

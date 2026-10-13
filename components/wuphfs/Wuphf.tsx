@@ -125,7 +125,7 @@ export default function Wuphf(props: WuphfProps) {
   return (
     <div
       ref={lastWuphfElementRef}
-      className="first:rounded-t-[20px] last:rounded-b-[20px] not-last:border-b not-last:border-border hover:bg-highlight transition-colors"
+      className="first:rounded-t-[20px] last:rounded-b-[20px] border-b last:border-b-0 border-border transition-colors border-solid"
     >
       <div className="grid grid-cols-[5rem_1fr] w-full">
         {/* Avatar Section */}
@@ -199,6 +199,7 @@ export default function Wuphf(props: WuphfProps) {
             )}
           </div>
 
+          {/* Post Text & Save Button Row */}
           {/* Post Text & Save Button Row */}
           <div className="flex flex-col items-end gap-1.5 mt-1">
             {editable ? (

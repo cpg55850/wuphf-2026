@@ -53,7 +53,7 @@ export default function NavigationBar(): React.ReactElement {
   }
 
   return (
-    <div className="border-b-[1.5px] border-border">
+    <div className="border-b-[1.5px] border-border shadow-md">
       <div className="max-w-[700px] mx-auto bg-body block z-10">
         <nav
           ref={myRef}

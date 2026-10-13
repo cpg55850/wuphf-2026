@@ -36,7 +36,7 @@ export default function Wuphfs(props: WuphfsProps) {
   }
 
   return (
-    <div className="border-[1.5px] border-border rounded-[20px] overflow-hidden">
+    <div className="border-[.5px] border-solid shadow-lg border-border rounded-[20px] overflow-hidden">
       {wuphfs?.map((wuphf, index) => {
         if (wuphfs.length === index + 1) {
           return (
