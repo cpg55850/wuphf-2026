@@ -201,16 +201,19 @@ export default function Wuphf(props: WuphfProps) {
 
           {/* Post Text & Save Button Row */}
           <div className="flex flex-col items-end gap-1.5 mt-1">
-            <TextareaAutosize
-              value={postContent}
-              onChange={handleEdit}
-              onClick={handleChild}
-              className={`font-inherit text-inherit py-1 px-0 leading-[1.25em] bg-transparent rounded-[10px] resize-none w-full outline-none shadow-none ${
-                editable
-                  ? 'border border-darkestBlue cursor-text px-2'
-                  : 'border-none cursor-default'
-              }`}
-            />
+            {editable ? (
+              <TextareaAutosize
+                value={postContent}
+                onChange={handleEdit}
+                onClick={handleChild}
+                className="font-inherit text-inherit py-1 px-2 leading-[1.25em] bg-transparent rounded-[10px] resize-none w-full outline-none shadow-none border border-darkestBlue cursor-text"
+              />
+            ) : (
+              <p className="w-full py-1 leading-[1.25em] whitespace-pre-wrap break-words">
+                {postContent}
+              </p>
+            )}
+
             {editable && (
               <Button
                 variant="secondary"
