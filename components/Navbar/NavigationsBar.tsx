@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { signOut } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 
 import NavigationLink from './DesktopLink'
 import Links from './Links'
@@ -15,6 +15,7 @@ import Avatar from '../general/Avatar'
 import Button from '../general/Button'
 
 export default function NavigationBar(): React.ReactElement {
+  const { data: session, status } = useSession()
   const router = useRouter()
   const {
     query,
@@ -45,6 +46,10 @@ export default function NavigationBar(): React.ReactElement {
 
   function handleSignout(): void {
     signOut()
+  }
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return null
   }
 
   return (

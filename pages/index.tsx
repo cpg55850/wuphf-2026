@@ -11,7 +11,7 @@ interface HomeProps {
   session: Session
 }
 
-export default function Home({ session }: HomeProps) {
+function Home({ session }: HomeProps) {
   const [wuphfs, setWuphfs] = useState<WuphfProps[] | null>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [cursor, setCursor] = useState<number | string | null>(null)
@@ -98,3 +98,5 @@ export default function Home({ session }: HomeProps) {
     </Container>
   )
 }
+
+export default withAuth(Home)
