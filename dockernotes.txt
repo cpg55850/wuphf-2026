@@ -13,3 +13,7 @@ docker compose -f docker-compose.prod.yml build --no-cache
 docker compose --env-file .env.production -f docker-compose.prod.yml up
 
 docker push charliechip95/wuphf:v1.0
+
+
+docker compose --env-file .env.production -f docker-compose.prod.yml down
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d

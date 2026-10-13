@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react'
-
+import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import Head from 'next/head'
-
 import withAuth from '../components/layout/withAuth'
 import Container from '../components/styledComponents/Container'
 import WuphfInput from '../components/timeline/WuphfInput'
@@ -13,19 +11,17 @@ interface HomeProps {
   session: Session
 }
 
-function Home({ session }: HomeProps) {
-  // Use WuphfProps[] to match what the feed components expect
-  const [wuphfs, setWuphfs] = useState<WuphfProps[] | null>(null)
+export default function Home({ session }: HomeProps) {
+  const [wuphfs, setWuphfs] = useState<WuphfProps[] | null>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [cursor, setCursor] = useState<number | string | null>(null)
   const [maxResults] = useState<number>(20)
   const [error, setError] = useState<ApiError | false>(false)
   const [hasMore, setHasMore] = useState<boolean>(true)
 
-  // Reusable delete handler to pass down to each Wuphf post
   const deleteWuphf = (wuphfId: string | number): void => {
     setWuphfs((prevWuphfs) =>
-      prevWuphfs ? prevWuphfs.filter((w) => w.id !== wuphfId) : null,
+      prevWuphfs ? prevWuphfs.filter((w) => w.id !== wuphfId) : [],
     )
   }
 
@@ -35,14 +31,11 @@ function Home({ session }: HomeProps) {
       const res = await axios.get(
         `../api/timeline?&maxResults=${maxResults}&cursor=${cursor}`,
       )
-
       if (res) {
         if (cursor === res.data.cursor) {
           setHasMore(false)
         }
         setCursor(res.data.cursor)
-
-        // Map raw timeline items to include WuphfProps requirements
         const fetchedWuphfs: WuphfProps[] = res.data.timeline.map((w: any) => ({
           ...w,
           userLikePost: w.userLikePost ?? false,
@@ -50,11 +43,17 @@ function Home({ session }: HomeProps) {
           deleteWuphf,
         }))
 
-        setWuphfs((prevWuphfs) =>
-          prevWuphfs !== null
-            ? [...prevWuphfs, ...fetchedWuphfs]
-            : fetchedWuphfs,
-        )
+        // This is to fix a bug where wuphf was showing up twice for the first wuphf created by a user
+        setWuphfs((prevWuphfs) => {
+          if (prevWuphfs === null) return fetchedWuphfs
+
+          // Combine and filter out duplicates based on ID
+          const existingIds = new Set(prevWuphfs.map((w) => w.id))
+          const uniqueNewWuphfs = fetchedWuphfs.filter(
+            (w) => !existingIds.has(w.id),
+          )
+          return [...prevWuphfs, ...uniqueNewWuphfs]
+        })
         setLoading(false)
       }
     } catch (err: any) {
@@ -90,7 +89,7 @@ function Home({ session }: HomeProps) {
       <div className="flex flex-col gap-4">
         <WuphfInput addWuphf={addWuphf} />
         <WuphfsFeed
-          wuphfs={wuphfs ?? []}
+          wuphfs={wuphfs}
           loading={loading}
           hasMore={hasMore}
           getWuphfs={getWuphfs}
@@ -99,5 +98,3 @@ function Home({ session }: HomeProps) {
     </Container>
   )
 }
-
-export default withAuth(Home)
