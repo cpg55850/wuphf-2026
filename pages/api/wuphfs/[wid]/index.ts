@@ -256,7 +256,7 @@ export default async function handler(
 
   if (typeof wid !== 'string' || !wid.trim() || !/^\d+$/.test(wid)) {
     return res.status(400).json({
-      message: "Parameter 'wid' must be a valid integer.",
+      message: 'Parameter \'wid\' must be a valid integer.',
     })
   }
 
@@ -264,7 +264,7 @@ export default async function handler(
 
   if (!Number.isSafeInteger(wuphfId)) {
     return res.status(400).json({
-      message: "Parameter 'wid' must be a valid integer.",
+      message: 'Parameter \'wid\' must be a valid integer.',
     })
   }
 

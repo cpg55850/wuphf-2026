@@ -13,7 +13,7 @@ export default function Error({ error }: ErrorProps) {
         <div>
           {String(error?.status) === '500'
             ? 'Internal Server Error'
-            : error?.data?.message}
+            : error?.data}
         </div>
       </div>
     </div>
