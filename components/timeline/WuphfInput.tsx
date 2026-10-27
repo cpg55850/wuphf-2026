@@ -66,6 +66,12 @@ export default function WuphfInput({ addWuphf }: WuphfInputProps) {
       <textarea
         placeholder="What's happening?"
         {...register('post')}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            void handleSubmit(onSubmit)()
+          }
+        }}
         className="font-inherit text-inherit placeholder:text-text bg-transparent border-none border-b border-border outline-none resize-none w-full h-16 mb-2"
       />
 

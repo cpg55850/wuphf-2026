@@ -16,11 +16,11 @@ function capitalize(text: string): string {
 
 export default function DesktopLink({ url, text, onClick }: DesktopLinkProps) {
   return (
-    <li className="list-none flex bg-body w-full hover:bg-highlight hover:cursor-pointer active:bg-highlightPressed">
+    <li className="list-none flex bg-body hover:bg-highlight active:bg-highlightPressed rounded-xl transition-colors">
       <Link href={url} passHref legacyBehavior>
         <a
           onClick={onClick}
-          className="text-text no-underline flex px-2 h-full w-full justify-center items-center"
+          className="text-text no-underline flex px-4 py-2 h-full w-full justify-center items-center rounded-md"
         >
           {capitalize(text)}
         </a>

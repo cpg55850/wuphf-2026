@@ -71,6 +71,12 @@ export default function CommentInput({
       <textarea
         value={comment}
         onChange={handleChange}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            event.currentTarget.form?.requestSubmit()
+          }
+        }}
         // placeholder="What do you want to say?"
         rows={1}
         className="font-inherit text-inherit bg-body w-full p-2 rounded resize-none outline-none border-[1.5px] border-border focus:outline-none"

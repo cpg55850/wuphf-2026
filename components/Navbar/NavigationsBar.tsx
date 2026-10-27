@@ -120,7 +120,11 @@ export default function NavigationBar(): React.ReactElement {
                   user={wuphfUser}
                 />
                 <div className="flex justify-center items-center ml-2">
-                  <Button variant="secondary" onClick={handleSignout}>
+                  <Button
+                    variant="secondary"
+                    onClick={handleSignout}
+                    className="rounded-md"
+                  >
                     Sign Out
                   </Button>
                 </div>

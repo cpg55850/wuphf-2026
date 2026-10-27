@@ -22,7 +22,7 @@ export default function Button({
   return (
     <button
       {...props}
-      className={`font-semibold whitespace-nowrap shrink-0 py-2 px-4 overflow-hidden rounded-full shadow-md cursor-pointer transition-all duration-200 ease-out border-none hover:brightness-95 active:brightness-90 disabled:bg-gray-400 disabled:cursor-not-allowed ${variantClasses[variant] || variantClasses.default} ${className}`}
+      className={`font-semibold whitespace-nowrap shrink-0 py-2 px-4 overflow-hidden rounded-md shadow-md cursor-pointer transition-all duration-200 ease-out border-none hover:brightness-95 active:brightness-90 disabled:bg-gray-400 disabled:cursor-not-allowed ${variantClasses[variant] || variantClasses.default} ${className}`}
     >
       {children}
     </button>
