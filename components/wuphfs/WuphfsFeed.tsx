@@ -1,13 +1,12 @@
-import React, { useRef, useCallback } from 'react'
+import React, { useRef, useCallback, useEffect } from 'react'
 
-import { WuphfProps } from './Wuphf'
 import Wuphfs from './Wuphfs'
 
 export interface WuphfsFeedProps {
-  wuphfs: WuphfProps[]
+  wuphfs: UserWuphfsResponse | null
   loading: boolean
   hasMore: boolean
-  getWuphfs: () => void
+  getWuphfs: () => Promise<void>
 }
 
 export default function WuphfsFeed({
@@ -21,11 +20,12 @@ export default function WuphfsFeed({
   const lastWuphfElementRef = useCallback(
     (node: HTMLElement | null) => {
       if (loading) return
-      if (observer.current) observer.current.disconnect()
+
+      observer.current?.disconnect()
 
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          if (hasMore) getWuphfs()
+        if (entries[0]?.isIntersecting && hasMore) {
+          void getWuphfs()
         }
       })
 
@@ -34,9 +34,13 @@ export default function WuphfsFeed({
     [loading, hasMore, getWuphfs],
   )
 
+  useEffect(() => {
+    return () => observer.current?.disconnect()
+  }, [])
+
   return (
     <Wuphfs
-      wuphfs={wuphfs}
+      wuphfs={wuphfs ?? []}
       lastWuphfElementRef={lastWuphfElementRef}
       wuphfsLoading={loading}
     />

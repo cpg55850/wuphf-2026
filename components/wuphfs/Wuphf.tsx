@@ -1,4 +1,4 @@
-import React, { useState, MouseEvent } from 'react'
+import React, { useState, useEffect, type MouseEvent } from 'react'
 
 import {
   faBan,
@@ -20,40 +20,41 @@ import { useWuphfUser } from '../../hooks/WuphfUserContext'
 import Avatar from '../general/Avatar'
 import Button from '../general/Button'
 
-export interface WuphfProps extends Omit<Wuphf, 'id'> {
-  id: string | number
-  userLikePost: boolean
-  _count: {
-    Likes: number
-    Comments: number
-  }
+export interface WuphfProps extends WuphfApiResponse {
   lastWuphfElementRef?: (node: HTMLElement | null) => void
-  deleteWuphf: (id: string | number) => void
-  user?: WuphfUser
+  deleteWuphf: (id: number) => void
 }
 
 export default function Wuphf(props: WuphfProps) {
   const { lastWuphfElementRef, deleteWuphf } = props
 
-  const [editMenuShown, setEditMenuShown] = useState<boolean>(false)
-  const [editable, setEditable] = useState<boolean>(false)
-  const [postContent, setPostContent] = useState<string>(props.postBody)
+  const [editMenuShown, setEditMenuShown] = useState(false)
+  const [editable, setEditable] = useState(false)
+  const [postContent, setPostContent] = useState(props.postBody ?? '')
+  const [userLikePost, setUserLikePost] = useState(props.userLikePost ?? false)
+  const [likeCount, setLikeCount] = useState(props._count?.Likes ?? 0)
 
-  const [userLikePost, setUserLikePost] = useState<boolean>(props.userLikePost)
-  const [likeCount, setLikeCount] = useState<number>(props._count?.Likes ?? 0)
   const { wuphfUser } = useWuphfUser()
-
   const { data: session } = useSession()
 
-  function toggleEditMenuShown(e: MouseEvent) {
+  const commentCount = props._count?.Comments ?? 0
+  const username = props.user?.userName ?? props.userId
+
+  useEffect(() => {
+    setPostContent(props.postBody ?? '')
+    setUserLikePost(props.userLikePost ?? false)
+    setLikeCount(props._count?.Likes ?? 0)
+  }, [props.postBody, props.userLikePost, props._count?.Likes])
+
+  function toggleEditMenuShown(e: MouseEvent<SVGSVGElement>) {
     e.preventDefault()
-    setEditMenuShown(!editMenuShown)
+    setEditMenuShown((shown) => !shown)
   }
 
-  function toggleEditable(e: MouseEvent) {
+  function toggleEditable(e: MouseEvent<HTMLLIElement>) {
     e.preventDefault()
     setEditMenuShown(false)
-    setEditable(!editable)
+    setEditable((current) => !current)
   }
 
   function handleEdit(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -62,78 +63,87 @@ export default function Wuphf(props: WuphfProps) {
     }
   }
 
-  function handleDelete(e: MouseEvent) {
+  async function handleDelete(e: MouseEvent<HTMLLIElement>) {
     e.preventDefault()
     setEditMenuShown(false)
-    axios.delete(`/api/wuphfs/${props.id}`).then(() => {
+
+    try {
+      await axios.delete(`/api/wuphfs/${props.id}`)
       deleteWuphf(props.id)
-    })
+    } catch (error) {
+      console.error('Failed to delete Wuphf:', error)
+    }
   }
 
-  function handleSave(e: MouseEvent) {
+  async function handleSave(e: MouseEvent<HTMLButtonElement>) {
     e.preventDefault()
-    setEditable(false)
-    axios.patch(`/api/wuphfs/${props.id}`, {
-      postBody: postContent,
-    })
+
+    try {
+      await axios.patch(`/api/wuphfs/${props.id}`, {
+        postBody: postContent,
+      })
+      setEditable(false)
+    } catch (error) {
+      console.error('Failed to update Wuphf:', error)
+    }
   }
 
-  function handleChild(e: MouseEvent) {
+  function handleChild(e: MouseEvent<HTMLTextAreaElement>) {
     e.stopPropagation()
   }
 
   async function handleLikeToggle() {
-    if (!session?.user?.email) return
+    const userId = session?.user?.email
 
-    if (!userLikePost) {
-      await axios
-        .post(`/api/wuphfs/${props.id}/likes`, {
-          userId: session.user.email,
+    if (!userId) return
+
+    try {
+      if (!userLikePost) {
+        await axios.post(`/api/wuphfs/${props.id}/likes`, {
+          userId,
           wuphfId: props.id,
         })
-        .then(() => {
-          setUserLikePost(true)
-          setLikeCount((prev) => prev + 1)
-        })
-    } else {
-      await axios
-        .delete(`/api/wuphfs/${props.id}/likes`, {
+
+        setUserLikePost(true)
+        setLikeCount((prev) => prev + 1)
+      } else {
+        await axios.delete(`/api/wuphfs/${props.id}/likes`, {
           data: {
-            userId: session.user.email,
+            userId,
             wuphfId: props.id,
           },
         })
-        .then(() => {
-          setUserLikePost(false)
-          setLikeCount((prev) => Math.max(0, prev - 1))
-        })
+
+        setUserLikePost(false)
+        setLikeCount((prev) => Math.max(0, prev - 1))
+      }
+    } catch (error) {
+      console.error('Failed to toggle Wuphf like:', error)
     }
   }
 
   function formatTime(createdAt: string | Date) {
-    const currentTime = moment()
-    const wuphfTime = moment(createdAt)
-    const timeDiff = currentTime.diff(wuphfTime, 'h')
+    const timeDiff = moment().diff(moment(createdAt), 'hours')
 
     if (timeDiff < 24) {
       return moment(createdAt).fromNow()
-    } else {
-      return moment(createdAt).format('MMM Do')
     }
+
+    return moment(createdAt).format('MMM Do')
   }
 
   return (
     <div
       ref={lastWuphfElementRef}
-      className="first:rounded-t-[20px] last:rounded-b-[20px] border-b last:border-b-0 border-border transition-colors border-solid"
+      className="first:rounded-t-[20px] last:rounded-b-[20px] border-b border-solid border-border transition-colors last:border-b-0"
     >
-      <div className="grid grid-cols-[5rem_1fr] w-full">
+      <div className="grid w-full grid-cols-[5rem_1fr]">
         {/* Avatar Section */}
-        <div className="relative p-4 mx-auto [&>span]:w-[50px] [&>span]:h-[50px]">
-          {props.user && props.user.avatar?.url && (
-            <Link href={`/user/${props.userId}`}>
+        <div className="relative mx-auto p-4 [&>span]:h-[50px] [&>span]:w-[50px]">
+          {props.user?.avatar?.url && (
+            <Link href={`/user/${encodeURIComponent(props.userId)}`}>
               <Avatar
-                username={props.userId}
+                username={username}
                 profileImageUrl={props.user.avatar.url}
                 size="large"
               />
@@ -143,52 +153,47 @@ export default function Wuphf(props: WuphfProps) {
 
         {/* Post Content Section */}
         <div className="p-4 pl-0">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-1 items-center">
-              <Link href={`/user/${props.userId}`}>
-                <h3 className="relative font-bold hover:underline cursor-pointer">
-                  {props.userId}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Link href={`/user/${encodeURIComponent(props.userId)}`}>
+                <h3 className="relative cursor-pointer font-bold hover:underline">
+                  {username}
                 </h3>
               </Link>
+
               <span className="text-subtext">·</span>
+
               <span className="text-subtext">
-                {formatTime(props?.createdAt)}
+                {formatTime(props.createdAt)}
               </span>
             </div>
 
-            {wuphfUser?.userName === props.userId && (
-              <div className="relative flex flex-col items-end cursor-pointer">
+            {wuphfUser?.userName === username && (
+              <div className="relative flex cursor-pointer flex-col items-end">
                 <FontAwesomeIcon
                   icon={faEllipsis}
                   onClick={toggleEditMenuShown}
-                  className={`p-1.5 rounded-full text-lightGrey hover:bg-primary hover:text-text ${
+                  className={`rounded-full p-1.5 text-lightGrey hover:bg-primary hover:text-text ${
                     editMenuShown ? 'bg-primary text-text' : ''
                   }`}
                 />
 
                 {/* Edit Dropdown Menu */}
                 {editMenuShown && (
-                  <ul className="absolute mt-8 rounded-[10px] bg-highlight shadow-lg z-10 overflow-hidden border border-border">
-                    {!editable ? (
-                      <li
-                        onClick={toggleEditable}
-                        className="px-3 py-1.5 flex items-center gap-2 cursor-pointer first:rounded-t-[10px] last:rounded-b-[10px] hover:text-text hover:bg-primary"
-                      >
-                        <FontAwesomeIcon icon={faPenToSquare} />
-                        <span>Edit</span>
-                      </li>
-                    ) : (
-                      <li
-                        onClick={toggleEditable}
-                        className="px-3 py-1.5 flex items-center gap-2 cursor-pointer first:rounded-t-[10px] last:rounded-b-[10px] hover:text-text hover:bg-primary"
-                      >
-                        <FontAwesomeIcon icon={faBan} />
-                        <span>Cancel</span>
-                      </li>
-                    )}
+                  <ul className="absolute z-10 mt-8 overflow-hidden rounded-[10px] border border-border bg-highlight shadow-lg">
+                    <li
+                      onClick={toggleEditable}
+                      className="flex cursor-pointer items-center gap-2 px-3 py-1.5 first:rounded-t-[10px] last:rounded-b-[10px] hover:bg-primary hover:text-text"
+                    >
+                      <FontAwesomeIcon
+                        icon={editable ? faBan : faPenToSquare}
+                      />
+                      <span>{editable ? 'Cancel' : 'Edit'}</span>
+                    </li>
+
                     <li
                       onClick={handleDelete}
-                      className="px-3 py-1.5 flex items-center gap-2 cursor-pointer first:rounded-t-[10px] last:rounded-b-[10px] hover:text-text hover:bg-primary"
+                      className="flex cursor-pointer items-center gap-2 px-3 py-1.5 first:rounded-t-[10px] last:rounded-b-[10px] hover:bg-primary hover:text-text"
                     >
                       <FontAwesomeIcon icon={faTrashCan} />
                       <span>Delete</span>
@@ -199,18 +204,17 @@ export default function Wuphf(props: WuphfProps) {
             )}
           </div>
 
-          {/* Post Text & Save Button Row */}
-          {/* Post Text & Save Button Row */}
-          <div className="flex flex-col items-end gap-1.5 mt-1">
+          {/* Post Text and Save Button */}
+          <div className="mt-1 flex flex-col items-end gap-1.5">
             {editable ? (
               <TextareaAutosize
                 value={postContent}
                 onChange={handleEdit}
                 onClick={handleChild}
-                className="font-inherit text-inherit py-1 px-2 leading-[1.25em] bg-transparent rounded-[10px] resize-none w-full outline-none shadow-none border border-darkestBlue cursor-text"
+                className="w-full resize-none cursor-text rounded-[10px] border border-darkestBlue bg-transparent px-2 py-1 font-inherit leading-[1.25em] text-inherit shadow-none outline-none"
               />
             ) : (
-              <p className="w-full py-1 leading-[1.25em] whitespace-pre-wrap break-words">
+              <p className="w-full break-words whitespace-pre-wrap py-1 leading-[1.25em]">
                 {postContent}
               </p>
             )}
@@ -219,7 +223,7 @@ export default function Wuphf(props: WuphfProps) {
               <Button
                 variant="secondary"
                 onClick={handleSave}
-                className="flex justify-end gap-2.5 w-max"
+                className="flex w-max justify-end gap-2.5"
               >
                 <span>Save changes</span>
                 <FontAwesomeIcon icon={faCheck} />
@@ -228,7 +232,7 @@ export default function Wuphf(props: WuphfProps) {
           </div>
 
           {/* Reactions Footer */}
-          <div className="flex gap-4 mt-3">
+          <div className="mt-3 flex gap-4">
             {/* Likes */}
             <div
               className={`flex items-center gap-1.5 ${
@@ -238,7 +242,7 @@ export default function Wuphf(props: WuphfProps) {
               <FontAwesomeIcon
                 icon={faThumbsUp}
                 onClick={handleLikeToggle}
-                className="cursor-pointer p-1.5 rounded-full transition-colors hover:bg-likeHover hover:text-like active:bg-likeActive"
+                className="cursor-pointer rounded-full p-1.5 transition-colors hover:bg-likeHover hover:text-like active:bg-likeActive"
               />
               <span className="cursor-pointer font-medium">{likeCount}</span>
             </div>
@@ -247,15 +251,15 @@ export default function Wuphf(props: WuphfProps) {
             <Link href={`/wuphf/${props.id}`}>
               <div
                 className={`flex items-center gap-1.5 ${
-                  props._count?.Comments > 0 ? 'text-comment' : 'text-gray-500'
+                  commentCount > 0 ? 'text-comment' : 'text-gray-500'
                 }`}
               >
                 <FontAwesomeIcon
                   icon={faComment}
-                  className="cursor-pointer p-1.5 rounded-full transition-colors hover:bg-commentHover hover:text-comment active:bg-commentActive"
+                  className="cursor-pointer rounded-full p-1.5 transition-colors hover:bg-commentHover hover:text-comment active:bg-commentActive"
                 />
                 <span className="cursor-pointer font-medium">
-                  {props._count?.Comments}
+                  {commentCount}
                 </span>
               </div>
             </Link>

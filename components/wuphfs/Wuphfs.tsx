@@ -1,56 +1,53 @@
 import React, { useState, useEffect } from 'react'
 
-import Wuphf, { WuphfProps } from './Wuphf'
+import Wuphf from './Wuphf'
 import Loading from '../layout/Loading'
 
 export interface WuphfsProps {
-  wuphfs: WuphfProps[]
+  wuphfs: UserWuphfsResponse
   wuphfsLoading?: boolean
   lastWuphfElementRef?: (node: HTMLElement | null) => void
 }
 
 export default function Wuphfs(props: WuphfsProps) {
   const { lastWuphfElementRef, wuphfsLoading } = props
-  const [wuphfs, setWuphfs] = useState<WuphfProps[]>(props.wuphfs)
+  const [wuphfs, setWuphfs] = useState<UserWuphfsResponse>(props.wuphfs)
 
   useEffect(() => {
     setWuphfs(props.wuphfs)
   }, [props.wuphfs])
 
-  if (wuphfsLoading && (!wuphfs || wuphfs.length === 0)) {
+  if (wuphfsLoading && wuphfs.length === 0) {
     return <Loading />
   }
 
-  if (!wuphfs || wuphfs.length === 0) {
+  if (wuphfs.length === 0) {
     return (
-      <div className="p-6 text-center text-gray-500 rounded-[20px] border-[1.5px] border-border">
+      <div className="rounded-[20px] border-[1.5px] border-border p-6 text-center text-gray-500">
         <p>No Wuphfs found... 😢</p>
       </div>
     )
   }
 
-  function deleteWuphf(wuphfId: string) {
+  function deleteWuphf(wuphfId: number) {
     setWuphfs((prevWuphfs) =>
       prevWuphfs.filter((wuphf) => wuphf.id !== wuphfId),
     )
   }
 
   return (
-    <div className="border-[.5px] border-solid shadow-lg border-border rounded-[20px] overflow-hidden">
-      {wuphfs?.map((wuphf, index) => {
-        if (wuphfs.length === index + 1) {
-          return (
-            <React.Fragment key={`${wuphf.userId}-${wuphf.id}`}>
-              <Wuphf
-                lastWuphfElementRef={lastWuphfElementRef}
-                deleteWuphf={deleteWuphf}
-                {...wuphf}
-              />
-            </React.Fragment>
-          )
-        } else {
-          return <Wuphf key={wuphf.id} deleteWuphf={deleteWuphf} {...wuphf} />
-        }
+    <div className="overflow-hidden rounded-[20px] border-[.5px] border-solid border-border shadow-lg">
+      {wuphfs.map((wuphf, index) => {
+        const isLastWuphf = index === wuphfs.length - 1
+
+        return (
+          <Wuphf
+            key={`${wuphf.userId}-${wuphf.id}`}
+            {...wuphf}
+            deleteWuphf={deleteWuphf}
+            {...(isLastWuphf ? { lastWuphfElementRef } : {})}
+          />
+        )
       })}
     </div>
   )

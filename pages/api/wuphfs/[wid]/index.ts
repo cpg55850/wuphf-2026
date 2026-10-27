@@ -256,7 +256,7 @@ export default async function handler(
 
   if (typeof wid !== 'string' || !wid.trim() || !/^\d+$/.test(wid)) {
     return res.status(400).json({
-      message: 'Parameter \'wid\' must be a valid integer.',
+      message: "Parameter 'wid' must be a valid integer.",
     })
   }
 
@@ -264,7 +264,7 @@ export default async function handler(
 
   if (!Number.isSafeInteger(wuphfId)) {
     return res.status(400).json({
-      message: 'Parameter \'wid\' must be a valid integer.',
+      message: "Parameter 'wid' must be a valid integer.",
     })
   }
 
@@ -292,7 +292,35 @@ export default async function handler(
         return res.status(404).json({ message: 'Wuphf not found' })
       }
 
-      return res.status(200).json(wuphf)
+      // Check whether the logged-in user liked this Wuphf.
+      const session = await getServerSession(req, res, authOptions)
+      const userEmail = session?.user?.email
+
+      let userLikePost = false
+
+      if (userEmail) {
+        const currentUser = await prisma.wuphfUser.findUnique({
+          where: { email: userEmail },
+          select: { userName: true },
+        })
+
+        if (currentUser) {
+          const existingLike = await prisma.likes.findFirst({
+            where: {
+              userId: currentUser.userName,
+              wuphfId,
+            },
+            select: { userId: true },
+          })
+
+          userLikePost = Boolean(existingLike)
+        }
+      }
+
+      return res.status(200).json({
+        ...wuphf,
+        userLikePost,
+      })
     } catch (error) {
       console.error('Error in GET /api/wuphfs/[wid]:', error)
       return res.status(500).json({ message: 'Internal server error' })

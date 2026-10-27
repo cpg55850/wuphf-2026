@@ -32,7 +32,7 @@ export default function Avatar({
         src={profileImageUrl || '/animal_svgs/dog_nau7in.svg'}
         alt={username}
         title={username}
-        className="rounded-full border border-lightGrey object-cover"
+        className="rounded-full border border-lightGrey object-cover hover:cursor-pointer"
       />
     </Link>
   )

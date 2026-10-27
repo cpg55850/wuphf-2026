@@ -1,8 +1,10 @@
 // types/global.d.ts
 
-export {} // Ensures this file is treated as a module so `declare global` works properly
+export {}
 
 declare global {
+  // NextAuth / Prisma models
+
   interface Account {
     id: string
     userId: string
@@ -45,6 +47,8 @@ declare global {
     token: string
     expires: string | Date
   }
+
+  // Database/domain models
 
   interface WuphfUser {
     email: string
@@ -98,6 +102,7 @@ declare global {
     follower?: WuphfUser
   }
 
+  // Database avatar model
   interface Avatar {
     avatarId: number
     name: string
@@ -105,9 +110,89 @@ declare global {
     users?: WuphfUser[]
   }
 
-  // Helper type for API Errors
+  // Shared shapes from documented API responses
+
+  interface ApiAvatarSummary {
+    id: number
+    url: string
+  }
+
+  interface ApiWuphfCounts {
+    Likes: number
+    Comments: number
+  }
+
+  interface ApiFollowerSummary {
+    userId: string
+    followerId?: string
+    user?: {
+      avatar?: ApiAvatarSummary
+    }
+    follower?: {
+      avatar?: ApiAvatarSummary
+    }
+  }
+
+  interface ApiUserCounts {
+    Followers: number
+    Following: number
+  }
+
+  // GET /api/wuphfs
+  // GET /api/wuphfs/{wid}
+  // GET /api/users/{uid}/wuphfs
+  interface WuphfApiResponse extends Wuphf {
+    _count: ApiWuphfCounts
+    user?: WuphfUser
+    userLikePost?: boolean
+  }
+
+  // GET /api/users/{uid}/wuphfs
+  type UserWuphfsResponse = WuphfApiResponse[]
+
+  // Posts embedded in GET /api/users/{uid}.
+  // The documented example includes counts but not userLikePost.
+  interface ProfileWuphfResponse extends Wuphf {
+    _count: ApiWuphfCounts
+  }
+
+  // GET /api/users/{uid}
+  interface UserProfileResponse {
+    email: string
+    userName: string
+    bio: string
+    theme?: string | null
+    avatarId: number
+    createdAt?: string
+    updatedAt?: string
+    isFollowed: boolean
+    avatar?: ApiAvatarSummary
+    wuphfs?: ProfileWuphfResponse[]
+    Followers?: ApiFollowerSummary[]
+    Following?: ApiFollowerSummary[]
+    _count: ApiUserCounts
+  }
+
+  // GET /api/users/search
+  // The documented example returns a nested avatar object.
+  interface UserSearchResponse {
+    userName: string
+    avatar: {
+      url: string
+    } | null
+  }
+
+  // GET /api/avatars
+  interface AvatarApiResponse {
+    id: number
+    url: string
+    createdAt: string
+    updatedAt: string
+  }
+
+  // API error wrapper used by the frontend
   interface ApiError {
-    data: any
+    data: unknown
     status: number
   }
 }
