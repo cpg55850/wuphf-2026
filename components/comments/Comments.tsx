@@ -18,7 +18,7 @@ export default function CommentsComponent({
 
   if (!comments || comments.length === 0) {
     return (
-      <div className="p-6 text-center text-subtext bg-highlight rounded-b-[20px]">
+      <div className="p-6 text-center text-subtext rounded-b-[20px]">
         <p>No comments... 😢</p>
       </div>
     )

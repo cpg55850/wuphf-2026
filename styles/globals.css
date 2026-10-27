@@ -6,8 +6,8 @@
 :root {
   --body-color: #ffffff;
   --border-color: #cccccc;
-  --highlight-color: #f2f2f2;
-  --highlight-pressed-color: #e6e6e6;
+  --highlight-color: #e8e8e8;
+  --highlight-pressed-color: #d6d6d6;
   --text-color: #000000;
   --subtext-color: #808080;
   --hamburger-color: #f2f2f2;
@@ -29,8 +29,8 @@
 .dark {
   --body-color: #15202b;
   --border-color: #3f566e;
-  --highlight-color: #202c38;
-  --highlight-pressed-color: #2b3b4b;
+  --highlight-color: #293b4b;
+  --highlight-pressed-color: #354b5e;
   --text-color: #ffffff;
   --subtext-color: #8aa2b9;
   --hamburger-color: #1e2732;
@@ -52,8 +52,8 @@
 .lava {
   --body-color: #000000;
   --border-color: #333333;
-  --highlight-color: #1a1a1a;
-  --highlight-pressed-color: #2b2b2b;
+  --highlight-color: #262626;
+  --highlight-pressed-color: #383838;
   --text-color: #ffffff;
   --subtext-color: #808080;
   --hamburger-color: #1c1c1c;

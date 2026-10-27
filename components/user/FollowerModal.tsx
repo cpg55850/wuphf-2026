@@ -21,11 +21,24 @@ export default function FollowerModal({
   rows,
   onClose,
 }: FollowerModalProps) {
+  const handleBackdropClick = () => {
+    onClose()
+  }
+
+  const handleModalClick = (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+  }
+
   return (
-    /* Modal Backdrop */
-    <div className="fixed inset-0 z-[1000] flex h-screen w-screen items-center justify-center bg-black/60 backdrop-blur-[3px]">
+    <div
+      className="fixed inset-0 z-[1000] flex h-screen w-screen items-center justify-center bg-black/60 backdrop-blur-[3px]"
+      onClick={handleBackdropClick}
+    >
       {/* Modal Card Content */}
-      <div className="relative flex max-h-[80vh] w-[90%] max-w-[450px] flex-col overflow-hidden rounded-[16px] border border-border bg-cardBackground text-text shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+      <div
+        className="relative flex max-h-[80vh] w-[90%] max-w-[450px] flex-col overflow-hidden rounded-[16px] border border-border bg-cardBackground text-text shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
+        onClick={handleModalClick}
+      >
         {/* Modal Header */}
         <div className="flex justify-between border-b border-border bg-body">
           <div className="flex w-full items-center justify-between p-4 px-5">
@@ -37,11 +50,11 @@ export default function FollowerModal({
         </div>
 
         {/* Modal Body */}
-        <div className="flex flex-col overflow-y-auto p-3 px-4 bg-body">
+        <div className="flex flex-col overflow-y-auto bg-body p-3 px-4">
           {rows && rows.length > 0 ? (
             rows.map((entry) => (
               <Link href={`/user/${entry.userName}`} key={entry.userName}>
-                <div className="flex cursor-pointer items-center gap-3 rounded-lg p-2.5 text-[1.1rem] text-text hover:bg-hoverBackground transition-colors">
+                <div className="flex cursor-pointer items-center gap-3 rounded-lg p-2.5 text-[1.1rem] text-text transition-colors hover:bg-hoverBackground">
                   <Avatar
                     username={entry.userName}
                     profileImageUrl={entry.avatar}
@@ -52,9 +65,7 @@ export default function FollowerModal({
               </Link>
             ))
           ) : (
-            <div className="p-4 text-center text-text opacity-75">
-              No followers... 😢
-            </div>
+            <div className="p-4 text-center text-text">No followers... 😢</div>
           )}
         </div>
       </div>

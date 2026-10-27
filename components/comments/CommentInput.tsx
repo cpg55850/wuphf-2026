@@ -56,7 +56,7 @@ export default function CommentInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-4 p-4 text-text bg-highlight border-solid border-b-[1.5px] border-border"
+      className="flex items-center gap-4 p-4 text-text bg-highlight rounded-t-lg border-solid border-b-[1.5px] border-border"
     >
       <div className="relative shrink-0 [&>span]:w-[50px] [&>span]:h-[50px]">
         {wuphfUser?.userName && (

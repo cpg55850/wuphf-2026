@@ -232,35 +232,35 @@ export default function Wuphf(props: WuphfProps) {
           </div>
 
           {/* Reactions Footer */}
-          <div className="mt-3 flex gap-4">
+          <div className="mt-3 flex gap-2">
             {/* Likes */}
-            <div
-              className={`flex items-center gap-1.5 ${
-                userLikePost ? 'text-like' : 'text-gray-500'
-              }`}
+            <button
+              type="button"
+              onClick={handleLikeToggle}
+              aria-label={`${userLikePost ? 'Unlike' : 'Like'} post`}
+              aria-pressed={userLikePost}
+              className={`group flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                userLikePost ? 'text-like' : 'text-gray-500 hover:text-like'
+              } hover:bg-like/10 active:bg-like/20`}
             >
               <FontAwesomeIcon
                 icon={faThumbsUp}
-                onClick={handleLikeToggle}
-                className="cursor-pointer rounded-full p-1.5 transition-colors hover:bg-likeHover hover:text-like active:bg-likeActive"
+                className="transition-colors"
               />
-              <span className="cursor-pointer font-medium">{likeCount}</span>
-            </div>
+              <span className="font-medium">{likeCount}</span>
+            </button>
 
             {/* Comments */}
             <Link href={`/wuphf/${props.id}`}>
               <div
-                className={`flex items-center gap-1.5 ${
-                  commentCount > 0 ? 'text-comment' : 'text-gray-500'
+                className={`group flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors hover:bg-comment/10 active:bg-comment/20 ${
+                  commentCount > 0
+                    ? 'text-comment'
+                    : 'text-gray-500 hover:text-comment'
                 }`}
               >
-                <FontAwesomeIcon
-                  icon={faComment}
-                  className="cursor-pointer rounded-full p-1.5 transition-colors hover:bg-commentHover hover:text-comment active:bg-commentActive"
-                />
-                <span className="cursor-pointer font-medium">
-                  {commentCount}
-                </span>
+                <FontAwesomeIcon icon={faComment} />
+                <span className="font-medium">{commentCount}</span>
               </div>
             </Link>
           </div>
