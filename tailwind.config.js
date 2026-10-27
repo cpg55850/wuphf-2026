@@ -21,8 +21,12 @@ module.exports = {
         },
         button: {
           primary: {
-            bg: '#1f9bef',
-            text: '#ffffff',
+            bg: 'var(--button-primary-bg)',
+            text: 'var(--button-primary-text)',
+          },
+          secondary: {
+            bg: 'var(--button-secondary-bg)',
+            text: 'var(--button-secondary-text)',
           },
         },
         hamburger: 'var(--hamburger-color)',

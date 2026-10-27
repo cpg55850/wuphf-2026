@@ -18,6 +18,11 @@
   --comment-color: #ff00ff;
   --comment-hover: #ff33ff;
   --comment-active: #ff80ff;
+  /* Button Colors */
+  --button-primary-bg: #1f9bef;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #202e4a;
+  --button-secondary-text: #f4f4f3;
 }
 
 /* Dark Theme Overrides */
@@ -36,6 +41,11 @@
   --comment-color: #ff00ff;
   --comment-hover: #ff33ff;
   --comment-active: #ff80ff;
+  /* Button Colors */
+  --button-primary-bg: #1f9bef;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #243546;
+  --button-secondary-text: #ffffff;
 }
 
 /* Lava Theme Overrides */
@@ -54,4 +64,9 @@
   --comment-color: #ff00ff;
   --comment-hover: #cc00cc;
   --comment-active: #800080;
+  /* Button Colors */
+  --button-primary-bg: #fe7900;
+  --button-primary-text: #ffffff;
+  --button-secondary-bg: #fe7900;
+  --button-secondary-text: #f4f4f3;
 }

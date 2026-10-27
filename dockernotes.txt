@@ -17,3 +17,6 @@ docker push charliechip95/wuphf:v1.0
 
 docker compose --env-file .env.production -f docker-compose.prod.yml down
 docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+
+docker compose --env-file .env.production -f docker-compose.prod.yml down
+docker compose --env-file .env.production -f docker-compose.prod.yml up --build
