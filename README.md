@@ -1,126 +1,261 @@
-# Software
+# Wuphf
 
-Download and install the following software to run the application locally:
+Wuphf is a social networking application built with Next.js, TypeScript, Prisma, and PostgreSQL. It supports user accounts, following and followers, posts (Wuphfs), comments, and likes.
 
-1. [Node.js](https://nodejs.org/en/download/) Download and install the current LTS version of Node.js (LTS Version 16.14.1).
-2. [Git](https://git-scm.com/downloads) Version control software.
-3. [PostgreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) The software to run the database locally.
-4. [pgAdmin](https://www.pgadmin.org/download/) A GUI for PostgreSQL.
+## Prerequisites
 
-# Getting Started
+Install the following software:
 
-1. Clone the repository.
-   ```
-   git clone https://github.com/cpg55850/WuphfTest.git Wuphf
-   ```
-2. Install the dependencies.
+1. [Git](https://git-scm.com/downloads) — to clone the repository.
+2. [Docker Desktop](https://www.docker.com/products/docker-desktop/) — to run the application and PostgreSQL database using Docker Compose.
 
-   ```
-   cd Wuphf
-   npm install
-   ```
+Node.js and PostgreSQL do not need to be installed separately for the Docker-based development workflow.
 
-3. Rename `.env.example` to `.env` and set environment variables for:
+## Getting Started
 
-   1. [Google Client Secret](https://console.developers.google.com/apis/credentials/oauthclient/578044382936-9e25sn8rl63jn2hj20p3te6u4s0qvium.apps.googleusercontent.com?project=wuphf-340818)
-   2. [Cloudinary](https://cloudinary.com/console/c-e4ff7ac8f9bcfcbc03dd0324aec080)
-   3. Your local database URL
+### 1. Clone the repository
 
-4. Create a local database.
+```bash
+git clone https://github.com/cpg55850/WuphfTest.git Wuphf
+cd Wuphf
+```
 
-   ```bash
-   npx prisma migrate reset
-   ```
+### 2. Configure environment variables
 
-5. Start the server
+Copy `.env.example` to `.env` and configure the environment variables required by the application.
 
-   ```bash
-   npm run dev
-   ```
+```bash
+cp .env.example .env
+```
 
-6. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure the credentials and settings required by the application, including:
 
-# Links
+- **Database:** PostgreSQL connection URL.
+- **Authentication:** Google OAuth client credentials, if required by the authentication configuration.
+- **Cloudinary:** Credentials for image uploads and media management, if required by the application.
 
-1. [GitHub](https://github.com/cpg55850/WuphfTest)
-2. [Jira](https://cpg55850.atlassian.net/jira/software/projects/THEP/boards/1)
-3. [Cloudinary CMS](https://cloudinary.com/console/c-e4ff7ac8f9bcfcbc03dd0324aec080)
-4. [Deployment](https://wuphf-test.vercel.app/)
-5. [Figma](https://www.figma.com/file/esvIWUvBkJmtutM1PBGZgb/Wuphf)
+For the Docker Compose setup, the database hostname is `db`, the database name is `wuphf`, and the default local PostgreSQL credentials are `postgres` / `postgres`.
 
-# Site Colors
+For example, the database connection URL may be:
 
-1. #f4f4f3 - White
-2. #72d0ed - Light Blue
-3. #747378 - Grey
-4. #7395b0 - Dark Blue
-5. #202e4a - Darkest Blues
+```env
+DATABASE_URL="postgresql://postgres:postgres@db:5432/wuphf?schema=public"
+```
 
-![Color Pallete](/asssets/ColorPallete.png)
+Use the actual variable names expected by the project's Prisma and authentication configuration. Do not commit `.env` or real credentials to version control.
 
-# References
+### 3. Start the application
 
-1. [Git](https://confluence.atlassian.com/bitbucketserver/basic-git-commands-776639767.html)
-2. [npm](https://docs.npmjs.com/cli/v7/commands)
-3. [Prisma](https://www.figma.com/file/esvIWUvBkJmtutM1PBGZgb/Wuphf)
-   - `npx prisma db pull`: Pulls the latest database from the Prisma server.
-   - `npx prisma migrate dev `: Runs the latest migration.
-   - `npx prisma migrate reset`: Resets the local database.
-   - `npx prisma db seed`: Seed the database with dummy data.
+Make sure Docker Desktop is running, then execute:
 
-# API Manual
+```bash
+docker compose up --build
+```
 
-## /me
+Docker Compose starts PostgreSQL and waits for its health check to pass before starting the application. The application container then:
 
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get the currently logged in user from session. | ERROR | (N/A) Update the currently logged in user from session. | (N/A) Delete the currently logged in user from session.
+1. Applies existing Prisma migrations with `prisma migrate deploy`.
+2. Seeds the database with `prisma db seed`.
+3. Starts the Next.js development server with `npm run dev`.
 
-## /users
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get all users. | Create a new user with the given data. | ERROR | ERROR
+The application is available at [http://localhost:3000](http://localhost:3000).
 
-## /users/[uid]
-The uid is the username of the user. Example: /user/johndoe
+PostgreSQL is exposed on port `5432` for local development tools.
 
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get a user with the given uid. | ERROR | Update a user with the given uid. | Delete a user with the given uid.
+### 4. Stop the application
 
-## /users/[uid]/wuphfs
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get all Wuphfs by the given user. | ERROR | ERROR | (N/A) Delete all wuphfs by the given user.
+Press `Ctrl+C` in the terminal running Docker Compose, then execute:
 
-## /users/[uid]/following
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-(N/A) Get the users the user with the uid is following. | The current session's user will follow the user with the given [uid]. | ERROR | The current session's user will unfollow the user with the given [uid].
+```bash
+docker compose down
+```
 
-## /users/[uid]/followers
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-(N/A) Get the followers of the user with the uid. | ERROR | ERROR | ERROR
+The PostgreSQL data is persisted in the `postgres-data` Docker volume, so stopping the containers does not normally delete the database.
 
-## /wuphfs
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get all wuphfs by all users. | Create a new post with the given data. | ERROR | ERROR
+To remove the containers and **permanently delete the persisted local database volume**, run:
 
-## /wuphfs/[wid]
-The wid is an incremented number, i.e. 1, 2, 3...
+```bash
+docker compose down -v
+```
 
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get the wuphf with the given wid. | ERROR | Update a wuphf with the given wid. | Delete a wuphf with the given wid.
+Use this command only when you intend to reset the local database completely.
 
-## /wuphfs/[wid]/comments
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get all comments of a specific post. | Create a new comment on a specific post. | ERROR | ERROR
+## Development Workflow
 
-## /wuphfs/[wid]/comments/[cid]
-GET | POST | PATCH | DELETE
---- | --- | --- | ---
-Get a specific comment on a specific post. | ERROR |  Update a specific comment on a specific post. |  Delete a specific comment on a specific post.
+### Application logs
+
+View the application logs with:
+
+```bash
+docker compose logs -f app
+```
+
+View the PostgreSQL logs with:
+
+```bash
+docker compose logs -f db
+```
+
+### Prisma and database migrations
+
+The application automatically applies existing migrations when its container starts.
+
+To create a new migration during development, run the following command, replacing the example migration name with a description of your change:
+
+```bash
+docker compose run --rm app npx prisma migrate dev --name add_feature
+```
+
+Commit the resulting migration files so other developers and deployment environments can apply the same schema changes.
+
+Useful Prisma commands:
+
+| Command                     | Description                                             |
+| --------------------------- | ------------------------------------------------------- |
+| `npx prisma migrate dev`    | Creates and applies migrations during development.      |
+| `npx prisma migrate deploy` | Applies existing migrations in deployment environments. |
+| `npx prisma db seed`        | Runs the configured database seed script.               |
+| `npx prisma studio`         | Opens Prisma Studio to inspect database records.        |
+| `npx prisma generate`       | Generates the Prisma Client.                            |
+
+These commands can be run inside the application container when the required dependencies and database are available.
+
+**Note:** The Compose startup command runs the seed script on each application-container startup. Ensure that the seed script is safe to rerun if repeated starts should not create duplicate records.
+
+**⚠️ Warning: Database seeding is destructive.**
+
+The configured seed script begins by executing a PostgreSQL `TRUNCATE ... RESTART IDENTITY CASCADE` statement against the `Comments`, `Likes`, `Follower`, `Wuphf`, `WuphfUser`, `User`, and `Avatar` tables. This **deletes all existing records in those tables and resets their auto-incrementing ID counters** before inserting the sample data.
+
+The Docker Compose startup command runs `npx prisma db seed` every time the application container starts. As a result, restarting or recreating the application container will erase existing data in these tables and repopulate the database with the seed script's sample users, posts, comments, likes, follows, and avatars.
+
+**Use this setup only with a disposable development database. Do not point it at a production database or any database containing data you need to preserve.**
+
+## Project Links
+
+- [GitHub Repository](https://github.com/cpg55850/WuphfTest)
+- [Jira Project Board](https://cpg55850.atlassian.net/jira/software/projects/THEP/boards/1)
+- [Cloudinary Console](https://cloudinary.com/console/c-e4ff7ac8f9bcfcbc03dd0324aec080)
+- [Deployment](https://wuphf-test.vercel.app/)
+- [Figma Design](https://www.figma.com/file/esvIWUvBkJmtutM1PBGZgb/Wuphf)
+
+## Site Colors
+
+| Hex       | Color        |
+| --------- | ------------ |
+| `#f4f4f3` | White        |
+| `#72d0ed` | Light blue   |
+| `#747378` | Gray         |
+| `#7395b0` | Dark blue    |
+| `#202e4a` | Darkest blue |
+
+![Color Palette](./asssets/ColorPallete.png)
+
+## References
+
+- [Git documentation](https://confluence.atlassian.com/bitbucketserver/basic-git-commands-776639767.html)
+- [npm CLI documentation](https://docs.npmjs.com/cli/)
+- [Prisma documentation](https://www.prisma.io/docs/)
+
+## API Manual
+
+Unless otherwise specified, the endpoints below describe the intended behavior of the API. Actual responses and authentication requirements depend on the route implementation.
+
+### `/me`
+
+| Method | Description                                                                   |
+| ------ | ----------------------------------------------------------------------------- |
+| GET    | Retrieves the currently authenticated user from the session.                  |
+| POST   | Not supported.                                                                |
+| PATCH  | Updates the currently authenticated user.                                     |
+| DELETE | Deletes the currently authenticated user, if supported by the implementation. |
+
+### `/users`
+
+| Method | Description                            |
+| ------ | -------------------------------------- |
+| GET    | Retrieves users.                       |
+| POST   | Creates a user with the supplied data. |
+| PATCH  | Not supported.                         |
+| DELETE | Not supported.                         |
+
+### `/users/[uid]`
+
+`uid` is the user's username.
+
+Example: `/users/johndoe`
+
+| Method | Description                   |
+| ------ | ----------------------------- |
+| GET    | Retrieves the specified user. |
+| POST   | Not supported.                |
+| PATCH  | Updates the specified user.   |
+| DELETE | Deletes the specified user.   |
+
+### `/users/[uid]/wuphfs`
+
+| Method | Description                                                                      |
+| ------ | -------------------------------------------------------------------------------- |
+| GET    | Retrieves posts created by the specified user.                                   |
+| POST   | Not supported.                                                                   |
+| PATCH  | Not supported.                                                                   |
+| DELETE | Deletes posts created by the specified user, if supported by the implementation. |
+
+### `/users/[uid]/following`
+
+| Method | Description                                                                             |
+| ------ | --------------------------------------------------------------------------------------- |
+| GET    | Retrieves the users followed by the specified user, if supported by the implementation. |
+| POST   | Follows the specified user.                                                             |
+| PATCH  | Not supported.                                                                          |
+| DELETE | Unfollows the specified user.                                                           |
+
+### `/users/[uid]/followers`
+
+| Method | Description                                    |
+| ------ | ---------------------------------------------- |
+| GET    | Retrieves the followers of the specified user. |
+| POST   | Not supported.                                 |
+| PATCH  | Not supported.                                 |
+| DELETE | Not supported.                                 |
+
+### `/wuphfs`
+
+| Method | Description                   |
+| ------ | ----------------------------- |
+| GET    | Retrieves posts across users. |
+| POST   | Creates a post.               |
+| PATCH  | Not supported.                |
+| DELETE | Not supported.                |
+
+### `/wuphfs/[wid]`
+
+`wid` identifies a post.
+
+Example: `/wuphfs/1`
+
+| Method | Description                   |
+| ------ | ----------------------------- |
+| GET    | Retrieves the specified post. |
+| POST   | Not supported.                |
+| PATCH  | Updates the specified post.   |
+| DELETE | Deletes the specified post.   |
+
+### `/wuphfs/[wid]/comments`
+
+| Method | Description                                |
+| ------ | ------------------------------------------ |
+| GET    | Retrieves comments for the specified post. |
+| POST   | Creates a comment on the specified post.   |
+| PATCH  | Not supported.                             |
+| DELETE | Not supported.                             |
+
+### `/wuphfs/[wid]/comments/[cid]`
+
+`cid` identifies a comment on the specified post.
+
+| Method | Description                      |
+| ------ | -------------------------------- |
+| GET    | Retrieves the specified comment. |
+| POST   | Not supported.                   |
+| PATCH  | Updates the specified comment.   |
+| DELETE | Deletes the specified comment.   |
